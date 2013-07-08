@@ -1,20 +1,30 @@
 #ifndef SCENE_H
 #define SCENE_H
 
+class Scene;
+class EditorBlock;
+    //QT
 #include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsItem>
 #include <QVector>
+#include <QString>
 #include <QTimer>
 #include <QKeyEvent>
-#include <QGraphicsItem>
 #include <QDebug>
-#include <QGraphicsView>
-#include "menu.h"
+#include <QTextStream>
+#include <QFile>
+
+    //C++
 #include <cmath>
-#include "roundplatform.h"
+
+    //My
+#include "menu.h"
 #include "sceneobject.h"
 #include "ball.h"
 #include "block.h"
 #include "platform.h"
+#include "editorblock.h"
 
 class Scene : public QGraphicsScene
 {
@@ -23,14 +33,17 @@ class Scene : public QGraphicsScene
         Scene(int width, int height, QObject * parent = 0);
         ~Scene();
         void start();
+        void copyEditorBlock(EditorBlock*);
+    protected:
+        void keyPressEvent(QKeyEvent * pe);
+        void keyReleaseEvent(QKeyEvent * pe);
+        void initMainMenu();
         void createPlatform(int, int);
         void createBorders();
         void addBall(QRectF, QColor, QVector2D);
         void addBlock(QRectF, QColor);
         void clearScene();
-    protected:
-        void keyPressEvent(QKeyEvent * pe);
-        void keyReleaseEvent(QKeyEvent * pe);
+        void loadLevel(QString);
     private slots:
         void nextTick();
     signals:
@@ -50,7 +63,6 @@ class Scene : public QGraphicsScene
         QVector<Block*> blocks;
         QTimer timer;
         void calculateCollide(SceneObject* main, SceneObject* secondary);
-        void initMainMenu();
 
 };
 

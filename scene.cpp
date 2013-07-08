@@ -1,14 +1,14 @@
 #include "scene.h"
 const int PLATFORM_WIDTH = 100;
 const int PLATFORM_HEIGHT = 20;
-const int BALL_WIDTH = 24;
-const int BALL_HEIGHT = 24;
+const int BALL_RADIUS = 24;
 const int TIMER_STEP = 3;
 const int BORDER_DEPTH = 10;
 const int BLOCK_WIDTH = 100;
 const int BLOCK_HEIGHT = 20;
 const double BALL_SPEED = 2;
 const double PLATFORM_SPEED = 1.5;
+static const int GAME_STATS_WIDTH = 160;
 
 Scene::Scene(int width, int height, QObject* parent) :
     QGraphicsScene(0, 0, width, height, parent),
@@ -71,7 +71,7 @@ inline void Scene::createPlatform(int width, int height){
         ((RoundPlatform*)platform->graphics)->setPen(QPen(Qt::black));
         ((RoundPlatform*)platform->graphics)->setBrush(QBrush(Qt::green));
         ((RoundPlatform*)platform->graphics)->setRect(QRectF(0, 0, width, height));
-        ((RoundPlatform*)platform->graphics)->setPos(this->width()/2-width/2,
+        ((RoundPlatform*)platform->graphics)->setPos((this->width()-GAME_STATS_WIDTH)/2-width/2,
                                                         this->height()-height*2);
         platform->properties->setProperty("isMovingLeft", false);
         platform->properties->setProperty("isMovingRight", false);
@@ -94,7 +94,14 @@ void Scene::addBlock(QRectF rect, QColor clr){
     ((QGraphicsRectItem*)blocks.back()->graphics)->setRect(0, 0, rect.width(), rect.height());
     ((QGraphicsRectItem*)blocks.back()->graphics)->setPos(rect.x(), rect.y());
     blocks.back()->properties->setDestroyable(true);
- }
+}
+void Scene::copyEditorBlock(EditorBlock* b){
+    EditorBlock* a = new EditorBlock(this);
+    a->setRect(b->rect());
+    a->setPos(b->pos());
+    a->setPen(b->pen());
+    a->setBrush(b->brush());
+}
 
 inline void Scene::createBorders(){
     if (borders.isEmpty()){
@@ -103,12 +110,12 @@ inline void Scene::createBorders(){
             ((QGraphicsRectItem*)borders[i]->graphics)->setPen(QPen(Qt::black));
             ((QGraphicsRectItem*)borders[i]->graphics)->setBrush(QBrush(Qt::gray));
         }
-        ((QGraphicsRectItem*)borders[0]->graphics)->setRect(0, 0, this->width(), 1);
+        ((QGraphicsRectItem*)borders[0]->graphics)->setRect(0, 0, this->width()-GAME_STATS_WIDTH, 1);
         ((QGraphicsRectItem*)borders[0]->graphics)->setPos(0, this->height()-1);
         ((QGraphicsRectItem*)borders[1]->graphics)->setRect(0, 0, BORDER_DEPTH, this->height());
-        ((QGraphicsRectItem*)borders[2]->graphics)->setRect(0, 0, this->width(), BORDER_DEPTH);
+        ((QGraphicsRectItem*)borders[2]->graphics)->setRect(0, 0, this->width()-GAME_STATS_WIDTH, BORDER_DEPTH);
         ((QGraphicsRectItem*)borders[3]->graphics)->setRect(0, 0, BORDER_DEPTH, this->height());
-        ((QGraphicsRectItem*)borders[3]->graphics)->setPos(this->width()-BORDER_DEPTH, 0);
+        ((QGraphicsRectItem*)borders[3]->graphics)->setPos(this->width()-GAME_STATS_WIDTH-BORDER_DEPTH, 0);
         borders[0]->graphics->hide();
     }
 }
@@ -128,16 +135,55 @@ inline void Scene::initMainMenu(){
     connect(temp, SIGNAL(clicked()), this, SLOT(exit()));
 }
 
- void Scene::nextTick(){
+void Scene::loadLevel(QString name){
+    QFile file(name);
+    if (file.open(QIODevice::ReadOnly)){
+        QTextStream stream(&file);
+        QString str;
+        while(!stream.atEnd()){
+            stream>>str;
+            if (str=="addblock"){
+                stream>>str;
+                double x = str.toDouble();
+                stream>>str;
+                double y = str.toDouble();
+                stream>>str;
+                double width = str.toDouble();
+                stream>>str;
+                double height = str.toDouble();
+                stream>>str;
+                if (str=="red")    addBlock(QRectF(x,y,width,height), QColor(Qt::red));
+                if (str=="cyan")   addBlock(QRectF(x,y,width,height), QColor(Qt::cyan));
+                if (str=="green")  addBlock(QRectF(x,y,width,height), QColor(Qt::green));
+                if (str=="white")  addBlock(QRectF(x,y,width,height), QColor(Qt::white));
+                if (str=="yellow") addBlock(QRectF(x,y,width,height), QColor(Qt::yellow));
+            }
+            if (str=="color"){
+                stream>>str;
+                int index = str.toInt();
+                stream>>str;
+                if (index<blocks.size()){
+                    if (str=="red")    ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::red));
+                    if (str=="cyan")   ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::cyan));
+                    if (str=="green")  ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::green));
+                    if (str=="white")  ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::white));
+                    if (str=="yellow") ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::yellow));
+                }
+            }
+        }
+        file.close();
+    }
+}
+void Scene::nextTick(){
     //Moves
     if ((platform->properties->property("isMovingLeft")).toBool())
-        if (platform->graphics->pos().x()>=BORDER_DEPTH+BALL_WIDTH+1)
+        if (platform->graphics->pos().x()>=BORDER_DEPTH+BALL_RADIUS+1)
             platform->graphics->setPos(platform->graphics->pos().x()+
                                        platform->properties->getSpeed().x(),
                                        platform->graphics->pos().y()+
                                        platform->properties->getSpeed().y());
     if ((platform->properties->property("isMovingRight")).toBool())
-        if (platform->graphics->pos().x()<=this->width()-PLATFORM_WIDTH-BORDER_DEPTH-BALL_WIDTH-1)
+        if (platform->graphics->pos().x()<=this->width()-PLATFORM_WIDTH-BORDER_DEPTH-BALL_RADIUS-1)
             platform->graphics->setPos(platform->graphics->pos().x()+
                                        platform->properties->getSpeed().x(),
                                        platform->graphics->pos().y()+
@@ -188,8 +234,8 @@ void Scene::calculateCollide(SceneObject* main, SceneObject* secondary){
     //Static part
     double posX = main->graphics->pos().x();
     double posY = main->graphics->pos().y();
-    double centerX = posX + (double)BALL_WIDTH/2;
-    double centerY = posY + (double)BALL_HEIGHT/2;
+    double centerX = posX + (double)BALL_RADIUS/2;
+    double centerY = posY + (double)BALL_RADIUS/2;
     double speedX = main->properties->getSpeed().x();
     double speedY = main->properties->getSpeed().y();
     QVector2D normal(intersection.x()-centerX, intersection.y()-centerY);
@@ -233,10 +279,26 @@ void Scene::exit(){
 
 void Scene::initGame(){
     clearScene();
+    createPlatform(PLATFORM_WIDTH, PLATFORM_HEIGHT);
+    addBall(QRectF(platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
+                   platform->graphics->pos().y()-BALL_RADIUS,
+                   BALL_RADIUS,
+                   BALL_RADIUS),
+            QColor(Qt::red),
+            QVector2D(0, -BALL_SPEED));
+    createBorders();
+    loadLevel("Levels/1-1.lvl");
 }
 
 void Scene::initLevelEditor(){
-
+    clearScene();
+    createBorders();
+    EditorBlock* example = new EditorBlock(this);
+    example->setRect(0, 0, 100, 20);
+    example->setPos(900, 60);
+    QPushButton* saveButton = new QPushButton("Save");
+    saveButton->setGeometry(900, 600, 100, 20);
+    this->addWidget(saveButton);
 }
 
 void Scene::initSettings(){
@@ -275,9 +337,9 @@ void Scene::keyPressEvent(QKeyEvent * pe){
                 ((QGraphicsEllipseItem*)(balls.back()->graphics))->
                         setBrush(QBrush(Qt::red));
                 ((QGraphicsEllipseItem*)(balls.back()->graphics))->
-                        setRect(QRect(0, 0, BALL_WIDTH, BALL_HEIGHT));
+                        setRect(QRect(0, 0, BALL_RADIUS, BALL_RADIUS));
                 ((QGraphicsEllipseItem*)(balls.back()->graphics))->
-                        setPos(this->width()/2-BALL_WIDTH/2, this->height()/2);
+                        setPos(this->width()/2-BALL_RADIUS/2, this->height()/2);
                 balls.back()->properties->setSpeed(QVector2D(0, BALL_SPEED));
             }
         }

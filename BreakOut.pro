@@ -18,7 +18,8 @@ SOURCES += main.cpp\
     mainwindow.cpp \
     ball.cpp \
     block.cpp \
-    platform.cpp
+    platform.cpp \
+    editorblock.cpp
 
 HEADERS  += scene.h \
     physicsobject.h \
@@ -28,7 +29,8 @@ HEADERS  += scene.h \
     mainwindow.h \
     ball.h \
     block.h \
-    platform.h
+    platform.h \
+    editorblock.h
 
 OTHER_FILES +=
 

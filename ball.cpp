@@ -1,6 +1,8 @@
 #include "ball.h"
 
-Ball::Ball(QGraphicsScene *scene, QObject *parent, QGraphicsItem *gparent) :
+Ball::Ball(QGraphicsScene *scene,
+           QObject *parent,
+           QGraphicsItem *gparent) :
     SceneObject(scene, parent, gparent)
 {
     delete graphics;
