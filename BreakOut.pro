@@ -14,7 +14,6 @@ SOURCES += main.cpp\
     physicsobject.cpp \
     sceneobject.cpp \
     roundplatform.cpp \
-    menu.cpp \
     mainwindow.cpp \
     ball.cpp \
     block.cpp \
@@ -25,7 +24,6 @@ HEADERS  += scene.h \
     physicsobject.h \
     sceneobject.h \
     roundplatform.h \
-    menu.h \
     mainwindow.h \
     ball.h \
     block.h \

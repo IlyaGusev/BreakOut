@@ -6,7 +6,7 @@ RoundPlatform::RoundPlatform() : QGraphicsItem(),
 void RoundPlatform::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){
     painter->setPen(_pen);
     painter->setBrush(_brush);
-    painter->drawChord(0, 0, _rect.width(), _rect.height()*2, 0, 180*16);
+    painter->drawPie(0, 0, _rect.width(), _rect.height()*2, 30*16, 120*16);
 }
 
 QRectF RoundPlatform::boundingRect() const{
@@ -22,7 +22,7 @@ void RoundPlatform::setRect(QRectF cp){
 QPainterPath RoundPlatform::shape() const{
      QPainterPath path;
      path.moveTo(_rect.width()/2, _rect.height()/2);
-     path.arcTo(_rect, 0, 180);
+     path.arcTo(_rect, 0, 150);
      return path;
 }
 

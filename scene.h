@@ -9,17 +9,23 @@ class EditorBlock;
 #include <QGraphicsItem>
 #include <QVector>
 #include <QString>
+#include <QList>
 #include <QTimer>
 #include <QKeyEvent>
 #include <QDebug>
 #include <QTextStream>
 #include <QFile>
+#include <QLCDNumber>
+#include <QPushButton>
+#include <QLineEdit>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QTime>
 
     //C++
 #include <cmath>
 
     //My
-#include "menu.h"
 #include "sceneobject.h"
 #include "ball.h"
 #include "block.h"
@@ -34,36 +40,47 @@ class Scene : public QGraphicsScene
         ~Scene();
         void start();
         void copyEditorBlock(EditorBlock*);
-    protected:
-        void keyPressEvent(QKeyEvent * pe);
-        void keyReleaseEvent(QKeyEvent * pe);
-        void initMainMenu();
+        void removeEditorBlock(EditorBlock*);
         void createPlatform(int, int);
         void createBorders();
         void addBall(QRectF, QColor, QVector2D);
         void addBlock(QRectF, QColor);
         void clearScene();
         void loadLevel(QString);
-    private slots:
+    protected:
+        void keyPressEvent(QKeyEvent * pe);
+        void keyReleaseEvent(QKeyEvent * pe);
+    public slots:
         void nextTick();
+        void initMainMenu();
+        void initGame();
+        void initGameState();
+        void updateGameState();
+        void updateTime();
+        void initLevelEditor();
+        void saveEditorLevel();
+        void initSettings(); //
+        void exit();
     signals:
         void quit();
-    public slots:
-        void exit();
-        void initGame(); //
-        void initLevelEditor(); //
-        void initSettings(); //
     private:
-        Menu* mainMenu;
-        Menu* settingsMenu;
+        QWidget* mainMenu;
+        QWidget* settingsMenu;
+        QWidget* editorMenu;
+        QWidget* gameState;
         QGraphicsView* view;
         Platform* platform;
         QVector<Ball*> balls;
         QVector<Block*> borders;
         QVector<Block*> blocks;
-        QTimer timer;
-        void calculateCollide(SceneObject* main, SceneObject* secondary);
+        QVector<EditorBlock*> editorBlocks;
+        QTimer animationTimer;
 
+        QString levelname;
+        int score;
+        QTime time;
+        int lifes;
+        void calculateCollide(SceneObject* main, SceneObject* secondary);
 };
 
 #endif // SCENE_H

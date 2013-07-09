@@ -1,11 +1,9 @@
 #include "scene.h"
-const int PLATFORM_WIDTH = 100;
-const int PLATFORM_HEIGHT = 20;
+const int PLATFORM_WIDTH = 170;
+const int PLATFORM_HEIGHT = 30;
 const int BALL_RADIUS = 24;
-const int TIMER_STEP = 3;
+const int ANIMATIONTIMER_STEP = 3;
 const int BORDER_DEPTH = 10;
-const int BLOCK_WIDTH = 100;
-const int BLOCK_HEIGHT = 20;
 const double BALL_SPEED = 2;
 const double PLATFORM_SPEED = 1.5;
 static const int GAME_STATS_WIDTH = 160;
@@ -14,55 +12,177 @@ Scene::Scene(int width, int height, QObject* parent) :
     QGraphicsScene(0, 0, width, height, parent),
     mainMenu(nullptr),
     settingsMenu(nullptr),
+    editorMenu(nullptr),
+    gameState(nullptr),
     view (new QGraphicsView),
     platform(nullptr),
     balls(),
     borders(),
     blocks(),
-    timer(this)
+    editorBlocks(),
+    animationTimer(this),
+    levelname("1-1"),
+    score(0),
+    lifes(3)
 {
     initMainMenu();
 }
 
-Scene::~Scene()
-{
-    view->deleteLater();
+void Scene::initMainMenu(){
     clearScene();
+    mainMenu = new QWidget;
+    this->addWidget(mainMenu);
+    mainMenu->setGeometry(width()/2-100, height()/5+100, 200, 200);
+
+    QPushButton* ng = new QPushButton("New Game");
+    QPushButton* le = new QPushButton("Level Editor");
+    QPushButton* st = new QPushButton("Settings");
+    QPushButton* ex = new QPushButton("Exit");
+
+    connect(ng, SIGNAL(clicked()), this, SLOT(initGame()));
+    connect(le, SIGNAL(clicked()), this, SLOT(initLevelEditor()));
+    connect(st, SIGNAL(clicked()), this, SLOT(initSettings()));
+    connect(ex, SIGNAL(clicked()), this, SLOT(exit()));
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(ng);
+    layout->addWidget(le);
+    layout->addWidget(st);
+    layout->addWidget(ex);
+    mainMenu->setLayout(layout);
 }
 
-void Scene::clearScene(){
-    if (mainMenu!=nullptr){
-        mainMenu->deleteLater();
-        mainMenu = nullptr;
-    }
-    if (settingsMenu!=nullptr){
-        settingsMenu->deleteLater();
-        settingsMenu = nullptr;
-    }
-    if (platform!=nullptr){
-        delete platform;
-        platform = nullptr;
-    }
-    foreach (Ball* b, balls){
-        removeItem(b->graphics);
-        delete b;
-    }
-    balls.clear();
-    foreach (Block* b, blocks){
-        removeItem(b->graphics);
-        delete b;
-    }
-    blocks.clear();
-    foreach (Block* b, borders){
-        removeItem(b->graphics);
-        delete b;
-    }
-    borders.clear();
+void Scene::initGame(){
+    clearScene();
+    createPlatform(PLATFORM_WIDTH, PLATFORM_HEIGHT);
+    addBall(QRectF(platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
+                   platform->graphics->pos().y()-BALL_RADIUS,
+                   BALL_RADIUS,
+                   BALL_RADIUS),
+            QColor(Qt::red),
+            QVector2D(0, -BALL_SPEED));
+    createBorders();
+    initGameState();
+    loadLevel("Levels/"+levelname+".lvl");
+    start();
 }
 
-void Scene::start(){
-    connect(&timer, SIGNAL(timeout()), this, SLOT(nextTick()));
-    timer.start(TIMER_STEP);
+void Scene::loadLevel(QString name){
+    QFile file(name);
+    if (file.open(QIODevice::ReadOnly)){
+        QTextStream stream(&file);
+        QString str;
+        while(!stream.atEnd()){
+            stream>>str;
+            if (str=="addblock"){
+                stream>>str;
+                double x = str.toDouble();
+                stream>>str;
+                double y = str.toDouble();
+                stream>>str;
+                double width = str.toDouble();
+                stream>>str;
+                double height = str.toDouble();
+                stream>>str;
+                int color = str.toInt();
+                addBlock(QRectF(x,y,width,height), QColor(Qt::GlobalColor(color)));
+            }
+            if (str=="color"){
+                stream>>str;
+                int index = str.toInt();
+                stream>>str;
+                int color = str.toInt();
+                if (index<blocks.size())
+                    ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::GlobalColor(color)));
+            }
+        }
+        file.close();
+    }
+}
+
+void Scene::initGameState(){
+    gameState = new QWidget;
+    gameState->setGeometry(this->width()-GAME_STATS_WIDTH+20, 50,
+                          GAME_STATS_WIDTH-20, 250);
+    this->addWidget(gameState);
+    QLabel* lvlLbl = new QLabel("Level: "+levelname);
+    QLabel* scoreLbl = new QLabel("Score: ");
+    QLabel* lifesLbl = new QLabel("Lifes: ");
+    QLCDNumber* scoreWgt = new QLCDNumber(6);
+    QLCDNumber* lifesWgt = new QLCDNumber(6);
+
+    scoreWgt->display(score);
+    lifesWgt->display(lifes);
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(lvlLbl);
+    layout->addWidget(scoreLbl);
+    layout->addWidget(scoreWgt);
+    layout->addWidget(lifesLbl);
+    layout->addWidget(lifesWgt);
+    gameState->setLayout(layout);
+}
+
+void Scene::updateGameState(){
+    gameState->deleteLater();
+    initGameState();
+}
+
+void Scene::updateTime(){
+    time.addSecs(1);
+    initGameState();
+}
+
+void Scene::initLevelEditor(){
+    clearScene();
+    createBorders();
+    EditorBlock* example = new EditorBlock(this);
+    example->setRect(0, 0, 100, 20);
+    example->setPos(900, 60);
+    editorBlocks.push_back(example);
+
+    editorMenu = new QWidget;
+    editorMenu->setGeometry(900, 600, 100, 120);
+    this->addWidget(editorMenu);
+
+    QLineEdit* le = new QLineEdit;
+    QPushButton* sv = new QPushButton("Save");
+    QPushButton* ex = new QPushButton("Exit");
+
+    connect(sv, SIGNAL(clicked()), this, SLOT(saveEditorLevel()));
+    connect(ex, SIGNAL(clicked()), this, SLOT(initMainMenu()));
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(le);
+    layout->addWidget(sv);
+    layout->addWidget(ex);
+    editorMenu->setLayout(layout);
+}
+
+void Scene::saveEditorLevel(){
+    QWidget* line = editorMenu->childAt(editorMenu->width()/2, 15);
+    if (((QLineEdit*)line)->displayText()!=""){
+        QFile file("Levels/"+((QLineEdit*)line)->displayText()+".lvl");
+        if (file.open(QIODevice::WriteOnly)){
+            QTextStream stream(&file);
+            foreach (EditorBlock* bl, editorBlocks){
+                if (((bl->pos().x()>LEFT_BORDER) && (bl->pos().x()+bl->rect().width()<RIGHT_BORDER) &&
+                       (bl->pos().y()>UP_BORDER) && (bl->pos().y()+bl->rect().height()<DOWN_BORDER))){
+                    stream<<"addblock "<<bl->pos().x()<<" "<<bl->pos().y()<<" "<<
+                            bl->rect().width()<<" "<<bl->rect().height()<<" "<<bl->color()<<"\n";
+                }
+            }
+            file.close();
+        }
+    }
+}
+
+void Scene::initSettings(){
+
+}
+
+void Scene::exit(){
+    emit quit();
 }
 
 inline void Scene::createPlatform(int width, int height){
@@ -75,6 +195,23 @@ inline void Scene::createPlatform(int width, int height){
                                                         this->height()-height*2);
         platform->properties->setProperty("isMovingLeft", false);
         platform->properties->setProperty("isMovingRight", false);
+    }
+}
+
+inline void Scene::createBorders(){
+    if (borders.isEmpty()){
+        for (int i=0; i<4; i++){
+            borders.push_back(new Block(this));
+            ((QGraphicsRectItem*)borders[i]->graphics)->setPen(QPen(Qt::black));
+            ((QGraphicsRectItem*)borders[i]->graphics)->setBrush(QBrush(Qt::gray));
+        }
+        ((QGraphicsRectItem*)borders[0]->graphics)->setRect(0, 0, this->width()-GAME_STATS_WIDTH, 1);
+        ((QGraphicsRectItem*)borders[0]->graphics)->setPos(0, this->height()-1);
+        ((QGraphicsRectItem*)borders[1]->graphics)->setRect(0, 0, BORDER_DEPTH, this->height());
+        ((QGraphicsRectItem*)borders[2]->graphics)->setRect(0, 0, this->width()-GAME_STATS_WIDTH, BORDER_DEPTH);
+        ((QGraphicsRectItem*)borders[3]->graphics)->setRect(0, 0, BORDER_DEPTH, this->height());
+        ((QGraphicsRectItem*)borders[3]->graphics)->setPos(this->width()-GAME_STATS_WIDTH-BORDER_DEPTH, 0);
+        borders[0]->graphics->hide();
     }
 }
 
@@ -101,89 +238,36 @@ void Scene::copyEditorBlock(EditorBlock* b){
     a->setPos(b->pos());
     a->setPen(b->pen());
     a->setBrush(b->brush());
+    a->setColor(b->color());
+    editorBlocks.push_back(a);
 }
 
-inline void Scene::createBorders(){
-    if (borders.isEmpty()){
-        for (int i=0; i<4; i++){
-            borders.push_back(new Block(this));
-            ((QGraphicsRectItem*)borders[i]->graphics)->setPen(QPen(Qt::black));
-            ((QGraphicsRectItem*)borders[i]->graphics)->setBrush(QBrush(Qt::gray));
-        }
-        ((QGraphicsRectItem*)borders[0]->graphics)->setRect(0, 0, this->width()-GAME_STATS_WIDTH, 1);
-        ((QGraphicsRectItem*)borders[0]->graphics)->setPos(0, this->height()-1);
-        ((QGraphicsRectItem*)borders[1]->graphics)->setRect(0, 0, BORDER_DEPTH, this->height());
-        ((QGraphicsRectItem*)borders[2]->graphics)->setRect(0, 0, this->width()-GAME_STATS_WIDTH, BORDER_DEPTH);
-        ((QGraphicsRectItem*)borders[3]->graphics)->setRect(0, 0, BORDER_DEPTH, this->height());
-        ((QGraphicsRectItem*)borders[3]->graphics)->setPos(this->width()-GAME_STATS_WIDTH-BORDER_DEPTH, 0);
-        borders[0]->graphics->hide();
+void Scene::removeEditorBlock(EditorBlock *bl){
+    QVector<EditorBlock*>::iterator it;
+    for (it=editorBlocks.begin(); it!=editorBlocks.end(); it++){
+        if ((*it)==bl)
+            editorBlocks.erase(it);
+        break;
     }
 }
 
-inline void Scene::initMainMenu(){
-    mainMenu = new Menu;
-    this->addWidget(mainMenu);
-//    mainMenu->setStyleSheet("QPushButton { color: white }");
-    mainMenu->setGeometry(width()/2-100, height()/5+100, 200, 200);
-    QAbstractButton* temp = mainMenu->addButton("New Game");
-    connect(temp, SIGNAL(clicked()), this, SLOT(initGame()));
-    temp = mainMenu->addButton("Level Editor");
-    connect(temp, SIGNAL(clicked()), this, SLOT(initLevelEditor()));
-    temp = mainMenu->addButton("Settings");
-    connect(temp, SIGNAL(clicked()), this, SLOT(initSettings()));
-    temp = mainMenu->addButton("Exit");
-    connect(temp, SIGNAL(clicked()), this, SLOT(exit()));
+void Scene::start(){
+    connect(&animationTimer, SIGNAL(timeout()), this, SLOT(nextTick()));
+    animationTimer.start(ANIMATIONTIMER_STEP);
 }
 
-void Scene::loadLevel(QString name){
-    QFile file(name);
-    if (file.open(QIODevice::ReadOnly)){
-        QTextStream stream(&file);
-        QString str;
-        while(!stream.atEnd()){
-            stream>>str;
-            if (str=="addblock"){
-                stream>>str;
-                double x = str.toDouble();
-                stream>>str;
-                double y = str.toDouble();
-                stream>>str;
-                double width = str.toDouble();
-                stream>>str;
-                double height = str.toDouble();
-                stream>>str;
-                if (str=="red")    addBlock(QRectF(x,y,width,height), QColor(Qt::red));
-                if (str=="cyan")   addBlock(QRectF(x,y,width,height), QColor(Qt::cyan));
-                if (str=="green")  addBlock(QRectF(x,y,width,height), QColor(Qt::green));
-                if (str=="white")  addBlock(QRectF(x,y,width,height), QColor(Qt::white));
-                if (str=="yellow") addBlock(QRectF(x,y,width,height), QColor(Qt::yellow));
-            }
-            if (str=="color"){
-                stream>>str;
-                int index = str.toInt();
-                stream>>str;
-                if (index<blocks.size()){
-                    if (str=="red")    ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::red));
-                    if (str=="cyan")   ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::cyan));
-                    if (str=="green")  ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::green));
-                    if (str=="white")  ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::white));
-                    if (str=="yellow") ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::yellow));
-                }
-            }
-        }
-        file.close();
-    }
-}
 void Scene::nextTick(){
     //Moves
     if ((platform->properties->property("isMovingLeft")).toBool())
-        if (platform->graphics->pos().x()>=BORDER_DEPTH+BALL_RADIUS+1)
+        if (platform->graphics->pos().x()>=BORDER_DEPTH)
             platform->graphics->setPos(platform->graphics->pos().x()+
                                        platform->properties->getSpeed().x(),
                                        platform->graphics->pos().y()+
                                        platform->properties->getSpeed().y());
     if ((platform->properties->property("isMovingRight")).toBool())
-        if (platform->graphics->pos().x()<=this->width()-PLATFORM_WIDTH-BORDER_DEPTH-BALL_RADIUS-1)
+        if (platform->graphics->pos().x()<=this->width()-
+                                           PLATFORM_WIDTH-BORDER_DEPTH-
+                                           GAME_STATS_WIDTH)
             platform->graphics->setPos(platform->graphics->pos().x()+
                                        platform->properties->getSpeed().x(),
                                        platform->graphics->pos().y()+
@@ -199,6 +283,10 @@ void Scene::nextTick(){
         if (balls[i]->collidesWithItem(borders[0])){
             delete balls[i];
             balls.erase(balls.begin()+i);
+            if (balls.isEmpty()){
+                lifes--;
+                updateGameState();
+            }
             continue;
         }
         if (balls[i]->collidesWithItem(platform)){
@@ -220,6 +308,8 @@ void Scene::nextTick(){
                 if (blocks[j]->properties->isDestroyable()){
                     delete blocks[j];
                     blocks.erase(blocks.begin()+j);
+                    score+=100;
+                    updateGameState();
                 }
             }
         }
@@ -273,38 +363,6 @@ void Scene::calculateCollide(SceneObject* main, SceneObject* secondary){
 
 }
 
-void Scene::exit(){
-    emit quit();
-}
-
-void Scene::initGame(){
-    clearScene();
-    createPlatform(PLATFORM_WIDTH, PLATFORM_HEIGHT);
-    addBall(QRectF(platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
-                   platform->graphics->pos().y()-BALL_RADIUS,
-                   BALL_RADIUS,
-                   BALL_RADIUS),
-            QColor(Qt::red),
-            QVector2D(0, -BALL_SPEED));
-    createBorders();
-    loadLevel("Levels/1-1.lvl");
-}
-
-void Scene::initLevelEditor(){
-    clearScene();
-    createBorders();
-    EditorBlock* example = new EditorBlock(this);
-    example->setRect(0, 0, 100, 20);
-    example->setPos(900, 60);
-    QPushButton* saveButton = new QPushButton("Save");
-    saveButton->setGeometry(900, 600, 100, 20);
-    this->addWidget(saveButton);
-}
-
-void Scene::initSettings(){
-
-}
-
 void Scene::keyPressEvent(QKeyEvent * pe){
     switch (pe->key()){
         case Qt::Key_Left:{
@@ -346,13 +404,13 @@ void Scene::keyPressEvent(QKeyEvent * pe){
         break;
         case Qt::Key_S:{
             if (!pe->isAutoRepeat()){
-                timer.stop();
+                animationTimer.stop();
             }
         }
         break;
         case Qt::Key_D:{
             if (!pe->isAutoRepeat()){
-                timer.start(TIMER_STEP);
+                animationTimer.start(ANIMATIONTIMER_STEP);
             }
         }
         break;
@@ -389,3 +447,52 @@ void Scene::keyReleaseEvent(QKeyEvent * pe){
         break;
     }
 }
+
+Scene::~Scene(){
+    view->deleteLater();
+    clearScene();
+}
+
+void Scene::clearScene(){
+    if (mainMenu!=nullptr){
+        mainMenu->deleteLater();
+        mainMenu = nullptr;
+    }
+    if (settingsMenu!=nullptr){
+        settingsMenu->deleteLater();
+        settingsMenu = nullptr;
+    }
+    if (editorMenu!=nullptr){
+        editorMenu->deleteLater();
+        editorMenu = nullptr;
+    }
+    if (gameState!=nullptr){
+        gameState->deleteLater();
+        gameState = nullptr;
+    }
+    if (platform!=nullptr){
+        delete platform;
+        platform = nullptr;
+    }
+    foreach (Ball* b, balls){
+        removeItem(b->graphics);
+        delete b;
+    }
+    balls.clear();
+    foreach (Block* b, blocks){
+        removeItem(b->graphics);
+        delete b;
+    }
+    blocks.clear();
+    foreach (EditorBlock* b, editorBlocks){
+        removeItem(b);
+        delete b;
+    }
+    editorBlocks.clear();
+    foreach (Block* b, borders){
+        removeItem(b->graphics);
+        delete b;
+    }
+    borders.clear();
+}
+

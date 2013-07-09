@@ -20,30 +20,3 @@ MainWindow::MainWindow(QWidget *parent) :
     view->show();
     view->fitInView(scene->sceneRect());
 }
-
-
-//void MainWindow::initGame(){
-//    QGraphicsView* view = new QGraphicsView;
-//    scene = new Scene(1024, 768, this);
-//    view->setRenderHints(QPainter::Antialiasing);
-//    view->setScene(scene);
-//    view->setViewport(this);
-//    delete mainMenu;
-//    delete logo;
-//    view->show();
-//    scene->start();
-//    view->fitInView(scene->sceneRect());
-//}
-//void MainWindow::settings(){
-//    delete mainMenu;
-//    settingsMenu = new Menu(this);
-//    settingsMenu->setGeometry(width()/2-100, height()/5+100, 200, 200);
-//    QLabel* lbl = new QLabel("Set definition", settingsMenu);
-
-
-//    settingsMenu->show();
-//}
-
-//void MainWindow::level(){
-
-//}
