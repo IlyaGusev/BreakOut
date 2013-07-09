@@ -39,6 +39,7 @@ class Scene : public QGraphicsScene
         Scene(int width, int height, QObject * parent = 0);
         ~Scene();
         void start();
+        void stop();
         void copyEditorBlock(EditorBlock*);
         void removeEditorBlock(EditorBlock*);
         void createPlatform(int, int);
@@ -46,6 +47,7 @@ class Scene : public QGraphicsScene
         void addBall(QRectF, QColor, QVector2D);
         void addBlock(QRectF, QColor);
         void clearScene();
+        void levelFinished();
         void loadLevel(QString);
     protected:
         void keyPressEvent(QKeyEvent * pe);
@@ -56,7 +58,8 @@ class Scene : public QGraphicsScene
         void initGame();
         void initGameState();
         void updateGameState();
-        void updateTime();
+        void levelFinishedSlot();
+        void gameOver();
         void initLevelEditor();
         void saveEditorLevel();
         void initSettings(); //
@@ -80,6 +83,7 @@ class Scene : public QGraphicsScene
         int score;
         QTime time;
         int lifes;
+        bool isInGame;
         void calculateCollide(SceneObject* main, SceneObject* secondary);
 };
 

@@ -21,15 +21,21 @@ Scene::Scene(int width, int height, QObject* parent) :
     blocks(),
     editorBlocks(),
     animationTimer(this),
-    levelname("1-1"),
+    levelname("1"),
     score(0),
-    lifes(3)
+    lifes(3),
+    isInGame(false)
 {
+    connect(&animationTimer, SIGNAL(timeout()), this, SLOT(nextTick()));
     initMainMenu();
 }
 
 void Scene::initMainMenu(){
     clearScene();
+    clear();
+    score=0;
+    levelname="1";
+    lifes=3;
     mainMenu = new QWidget;
     this->addWidget(mainMenu);
     mainMenu->setGeometry(width()/2-100, height()/5+100, 200, 200);
@@ -53,6 +59,7 @@ void Scene::initMainMenu(){
 }
 
 void Scene::initGame(){
+    isInGame=true;
     clearScene();
     createPlatform(PLATFORM_WIDTH, PLATFORM_HEIGHT);
     addBall(QRectF(platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
@@ -60,7 +67,7 @@ void Scene::initGame(){
                    BALL_RADIUS,
                    BALL_RADIUS),
             QColor(Qt::red),
-            QVector2D(0, -BALL_SPEED));
+            QVector2D(0, 0));
     createBorders();
     initGameState();
     loadLevel("Levels/"+levelname+".lvl");
@@ -102,7 +109,7 @@ void Scene::loadLevel(QString name){
 
 void Scene::initGameState(){
     gameState = new QWidget;
-    gameState->setGeometry(this->width()-GAME_STATS_WIDTH+20, 50,
+    gameState->setGeometry(this->width()-GAME_STATS_WIDTH+15, 50,
                           GAME_STATS_WIDTH-20, 250);
     this->addWidget(gameState);
     QLabel* lvlLbl = new QLabel("Level: "+levelname);
@@ -128,9 +135,47 @@ void Scene::updateGameState(){
     initGameState();
 }
 
-void Scene::updateTime(){
-    time.addSecs(1);
-    initGameState();
+void Scene::levelFinished(){
+    stop();
+    QLabel* lvl = new QLabel("Level Complete!");
+    lvl->setFont(QFont("Courier", 40, QFont::Bold));
+    this->addWidget(lvl);
+    lvl->setGeometry((width()-GAME_STATS_WIDTH)/2-234, height()/5, 468, 60);
+    lvl->show();
+    QTimer::singleShot(2000, this, SLOT(levelFinishedSlot()));
+}
+
+void Scene::levelFinishedSlot(){
+    clearScene();
+    clear();
+    levelname = QString((((char)((levelname.toInt())+1))+'0'));
+    QFile file("Levels/"+levelname+".lvl");
+    if (file.exists()){
+        initGame();
+    }
+    else{
+        isInGame = false;
+        QLabel* lvl = new QLabel("You win!");
+        lvl->setFont(QFont("Courier", 40, QFont::Bold));
+        this->addWidget(lvl);
+        lvl->setGeometry(width()/2-125, height()/5, 250, 60);
+        lvl->show();
+        QTimer::singleShot(2000, this, SLOT(initMainMenu()));
+    }
+    file.close();
+}
+
+void Scene::gameOver(){
+    isInGame = false;
+    clearScene();
+    clear();
+    QLabel* lvl = new QLabel("Game over!");
+    lvl->setFont(QFont("Courier", 40, QFont::Bold));
+    this->addWidget(lvl);
+    lvl->setGeometry(width()/2-155, height()/5, 310, 60);
+    lvl->show();
+    QTimer::singleShot(2000, this, SLOT(initMainMenu()));
+    return;
 }
 
 void Scene::initLevelEditor(){
@@ -252,8 +297,11 @@ void Scene::removeEditorBlock(EditorBlock *bl){
 }
 
 void Scene::start(){
-    connect(&animationTimer, SIGNAL(timeout()), this, SLOT(nextTick()));
     animationTimer.start(ANIMATIONTIMER_STEP);
+}
+
+void Scene::stop(){
+    animationTimer.stop();
 }
 
 void Scene::nextTick(){
@@ -273,22 +321,19 @@ void Scene::nextTick(){
                                        platform->graphics->pos().y()+
                                        platform->properties->getSpeed().y());
     for (int i=0; i<balls.size(); i++){
-        balls[i]->graphics->setPos(balls[i]->graphics->pos().x()+
-                                   balls[i]->properties->getSpeed().x(),
-                                   balls[i]->graphics->pos().y()+
-                                   balls[i]->properties->getSpeed().y());
+        if (balls[i]->properties->getSpeed()==QVector2D(0,0))
+            balls[i]->graphics->setPos(platform->graphics->pos().x()+
+                                       PLATFORM_WIDTH/2-BALL_RADIUS/2,
+                                       platform->graphics->pos().y()
+                                       -BALL_RADIUS);
+        else
+            balls[i]->graphics->setPos(balls[i]->graphics->pos().x()+
+                                       balls[i]->properties->getSpeed().x(),
+                                       balls[i]->graphics->pos().y()+
+                                       balls[i]->properties->getSpeed().y());
     }
     //Collides
     for (int i=0; i<balls.size(); i++){
-        if (balls[i]->collidesWithItem(borders[0])){
-            delete balls[i];
-            balls.erase(balls.begin()+i);
-            if (balls.isEmpty()){
-                lifes--;
-                updateGameState();
-            }
-            continue;
-        }
         if (balls[i]->collidesWithItem(platform)){
             calculateCollide(balls[i], platform);
         }
@@ -310,8 +355,32 @@ void Scene::nextTick(){
                     blocks.erase(blocks.begin()+j);
                     score+=100;
                     updateGameState();
+                    if (blocks.isEmpty()){
+                        levelFinished();
+                    }
                 }
             }
+        }
+        if (balls[i]->collidesWithItem(borders[0])){
+            delete balls[i];
+            balls.erase(balls.begin()+i);
+            if (balls.isEmpty()){
+                if (lifes!=0){
+                    lifes--;
+                    updateGameState();
+                    addBall(QRectF(platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
+                                   platform->graphics->pos().y()-BALL_RADIUS,
+                                   BALL_RADIUS,
+                                   BALL_RADIUS),
+                            QColor(Qt::red),
+                            QVector2D(0, 0));
+                }
+                else{
+                    stop();
+                    QTimer::singleShot(1000, this, SLOT(gameOver()));
+                }
+            }
+            continue;
         }
     }
 }
@@ -364,88 +433,87 @@ void Scene::calculateCollide(SceneObject* main, SceneObject* secondary){
 }
 
 void Scene::keyPressEvent(QKeyEvent * pe){
-    switch (pe->key()){
-        case Qt::Key_Left:{
-            if (!pe->isAutoRepeat()){
-                platform->properties->setProperty("isMovingLeft", true);
-                if ((platform->properties->property("isMovingRight")).toBool())
-                    platform->properties->setSpeed(QVector2D(0, 0));
-                else
-                    platform->properties->setSpeed(QVector2D(-PLATFORM_SPEED, 0));
+    if (isInGame){
+        switch (pe->key()){
+            case Qt::Key_Left:{
+                if (!pe->isAutoRepeat()){
+                    platform->properties->setProperty("isMovingLeft", true);
+                    if ((platform->properties->property("isMovingRight")).toBool())
+                        platform->properties->setSpeed(QVector2D(0, 0));
+                    else
+                        platform->properties->setSpeed(QVector2D(-PLATFORM_SPEED, 0));
+                }
             }
-        }
-        break;
-        case Qt::Key_Right:{
-            if (!pe->isAutoRepeat()){
-                platform->properties->setProperty("isMovingRight", true);
-                if ((platform->properties->property("isMovingLeft")).toBool())
-                    platform->properties->setSpeed(QVector2D(0, 0));
-                else
-                    platform->properties->setSpeed(QVector2D(PLATFORM_SPEED, 0));
-             }
-        }
-        break;
-        case Qt::Key_B:{
-            if (!pe->isAutoRepeat()){
-                balls.push_back(new Ball(this));
-                delete balls.back()->graphics;
-                balls.back()->graphics = new QGraphicsEllipseItem(0, this);
-                ((QGraphicsEllipseItem*)(balls.back()->graphics))->
-                        setPen(QPen(Qt::black));
-                ((QGraphicsEllipseItem*)(balls.back()->graphics))->
-                        setBrush(QBrush(Qt::red));
-                ((QGraphicsEllipseItem*)(balls.back()->graphics))->
-                        setRect(QRect(0, 0, BALL_RADIUS, BALL_RADIUS));
-                ((QGraphicsEllipseItem*)(balls.back()->graphics))->
-                        setPos(this->width()/2-BALL_RADIUS/2, this->height()/2);
-                balls.back()->properties->setSpeed(QVector2D(0, BALL_SPEED));
+            break;
+            case Qt::Key_Right:{
+                if (!pe->isAutoRepeat()){
+                    platform->properties->setProperty("isMovingRight", true);
+                    if ((platform->properties->property("isMovingLeft")).toBool())
+                        platform->properties->setSpeed(QVector2D(0, 0));
+                    else
+                        platform->properties->setSpeed(QVector2D(PLATFORM_SPEED, 0));
+                 }
             }
-        }
-        break;
-        case Qt::Key_S:{
-            if (!pe->isAutoRepeat()){
-                animationTimer.stop();
+            break;
+            case Qt::Key_Space:{
+                foreach(Ball* bl, balls){
+                    if (bl->properties->getSpeed()==QVector2D(0,0)){
+                        bl->properties->setSpeed(QVector2D(0, -BALL_SPEED));
+                    }
+                }
             }
-        }
-        break;
-        case Qt::Key_D:{
-            if (!pe->isAutoRepeat()){
-                animationTimer.start(ANIMATIONTIMER_STEP);
+            break;
+            case Qt::Key_S:{
+                if (!pe->isAutoRepeat()){
+                    animationTimer.stop();
+                }
             }
+            break;
+            case Qt::Key_D:{
+                if (!pe->isAutoRepeat()){
+                    animationTimer.start(ANIMATIONTIMER_STEP);
+                }
+            }
+            break;
+            default:
+                QGraphicsScene::keyPressEvent(pe);
+            break;
         }
-        break;
-        default:
-            QGraphicsScene::keyPressEvent(pe);
-        break;
     }
+    else
+        QGraphicsScene::keyPressEvent(pe);
 }
 
 void Scene::keyReleaseEvent(QKeyEvent * pe){
-    switch (pe->key()){
-        case Qt::Key_Left:{
-            if (!pe->isAutoRepeat()){
-                platform->properties->setProperty("isMovingLeft", false);
-                if ((platform->properties->property("isMovingRight")).toBool())
-                    platform->properties->setSpeed(QVector2D(PLATFORM_SPEED, 0));
-                else
-                    platform->properties->setSpeed(QVector2D(0, 0));
+    if (isInGame){
+        switch (pe->key()){
+            case Qt::Key_Left:{
+                if (!pe->isAutoRepeat()){
+                    platform->properties->setProperty("isMovingLeft", false);
+                    if ((platform->properties->property("isMovingRight")).toBool())
+                        platform->properties->setSpeed(QVector2D(PLATFORM_SPEED, 0));
+                    else
+                        platform->properties->setSpeed(QVector2D(0, 0));
+                }
             }
-        }
-        break;
-        case Qt::Key_Right:{
-            if (!pe->isAutoRepeat()){
-                platform->properties->setProperty("isMovingRight", false);
-                if ((platform->properties->property("isMovingLeft")).toBool())
-                    platform->properties->setSpeed(QVector2D(-PLATFORM_SPEED, 0));
-                else
-                    platform->properties->setSpeed(QVector2D(0, 0));
+            break;
+            case Qt::Key_Right:{
+                if (!pe->isAutoRepeat()){
+                    platform->properties->setProperty("isMovingRight", false);
+                    if ((platform->properties->property("isMovingLeft")).toBool())
+                        platform->properties->setSpeed(QVector2D(-PLATFORM_SPEED, 0));
+                    else
+                        platform->properties->setSpeed(QVector2D(0, 0));
+                }
             }
+            break;
+            default:
+                QGraphicsScene::keyReleaseEvent(pe);
+            break;
         }
-        break;
-        default:
-            QGraphicsScene::keyReleaseEvent(pe);
-        break;
     }
+    else
+        QGraphicsScene::keyReleaseEvent(pe);
 }
 
 Scene::~Scene(){
