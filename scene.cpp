@@ -10,6 +10,7 @@ static const int GAME_STATS_WIDTH = 160;
 
 Scene::Scene(int width, int height, QObject* parent) :
     QGraphicsScene(0, 0, width, height, parent),
+    message(),
     mainMenu(nullptr),
     settingsMenu(nullptr),
     editorMenu(nullptr),
@@ -21,7 +22,7 @@ Scene::Scene(int width, int height, QObject* parent) :
     blocks(),
     editorBlocks(),
     animationTimer(this),
-    levelname("1"),
+    levelName("1"),
     score(0),
     lifes(3),
     isInGame(false)
@@ -32,9 +33,8 @@ Scene::Scene(int width, int height, QObject* parent) :
 
 void Scene::initMainMenu(){
     clearScene();
-    clear();
     score=0;
-    levelname="1";
+    levelName="1";
     lifes=3;
     mainMenu = new QWidget;
     this->addWidget(mainMenu);
@@ -70,7 +70,7 @@ void Scene::initGame(){
             QVector2D(0, 0));
     createBorders();
     initGameState();
-    loadLevel("Levels/"+levelname+".lvl");
+    loadLevel("Levels/"+levelName+".lvl");
     start();
 }
 
@@ -112,7 +112,7 @@ void Scene::initGameState(){
     gameState->setGeometry(this->width()-GAME_STATS_WIDTH+15, 50,
                           GAME_STATS_WIDTH-20, 250);
     this->addWidget(gameState);
-    QLabel* lvlLbl = new QLabel("Level: "+levelname);
+    QLabel* lvlLbl = new QLabel("Level: "+levelName);
     QLabel* scoreLbl = new QLabel("Score: ");
     QLabel* lifesLbl = new QLabel("Lifes: ");
     QLCDNumber* scoreWgt = new QLCDNumber(6);
@@ -137,29 +137,28 @@ void Scene::updateGameState(){
 
 void Scene::levelFinished(){
     stop();
-    QLabel* lvl = new QLabel("Level Complete!");
-    lvl->setFont(QFont("Courier", 40, QFont::Bold));
-    this->addWidget(lvl);
-    lvl->setGeometry((width()-GAME_STATS_WIDTH)/2-234, height()/5, 468, 60);
-    lvl->show();
+    message = new QLabel("Level Complete!");
+    message->setFont(QFont("Courier", 40, QFont::Bold));
+    addWidget(message);
+    message->setGeometry((width()-GAME_STATS_WIDTH)/2-234, height()/5, 468, 60);
+    message->show();
     QTimer::singleShot(2000, this, SLOT(levelFinishedSlot()));
 }
 
 void Scene::levelFinishedSlot(){
     clearScene();
-    clear();
-    levelname = QString((((char)((levelname.toInt())+1))+'0'));
-    QFile file("Levels/"+levelname+".lvl");
+    levelName = QString((((char)((levelName.toInt())+1))+'0'));
+    QFile file("Levels/"+levelName+".lvl");
     if (file.exists()){
         initGame();
     }
     else{
         isInGame = false;
-        QLabel* lvl = new QLabel("You win!");
-        lvl->setFont(QFont("Courier", 40, QFont::Bold));
-        this->addWidget(lvl);
-        lvl->setGeometry(width()/2-125, height()/5, 250, 60);
-        lvl->show();
+        message = new QLabel("You win!");
+        message->setFont(QFont("Courier", 40, QFont::Bold));
+        addWidget(message);
+        message->setGeometry(width()/2-125, height()/5, 250, 60);
+        message->show();
         QTimer::singleShot(2000, this, SLOT(initMainMenu()));
     }
     file.close();
@@ -168,14 +167,12 @@ void Scene::levelFinishedSlot(){
 void Scene::gameOver(){
     isInGame = false;
     clearScene();
-    clear();
-    QLabel* lvl = new QLabel("Game over!");
-    lvl->setFont(QFont("Courier", 40, QFont::Bold));
-    this->addWidget(lvl);
-    lvl->setGeometry(width()/2-155, height()/5, 310, 60);
-    lvl->show();
+    message = new QLabel("Game over!");
+    message->setFont(QFont("Courier", 40, QFont::Bold));
+    addWidget(message);
+    message->setGeometry(width()/2-155, height()/5, 310, 60);
+    message->show();
     QTimer::singleShot(2000, this, SLOT(initMainMenu()));
-    return;
 }
 
 void Scene::initLevelEditor(){
@@ -517,11 +514,15 @@ void Scene::keyReleaseEvent(QKeyEvent * pe){
 }
 
 Scene::~Scene(){
-    view->deleteLater();
     clearScene();
+    view->deleteLater();
 }
 
 void Scene::clearScene(){
+    if (message!=nullptr){
+        message->deleteLater();
+        message = nullptr;
+    }
     if (mainMenu!=nullptr){
         mainMenu->deleteLater();
         mainMenu = nullptr;

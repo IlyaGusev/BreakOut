@@ -67,6 +67,7 @@ class Scene : public QGraphicsScene
     signals:
         void quit();
     private:
+        QLabel* message;
         QWidget* mainMenu;
         QWidget* settingsMenu;
         QWidget* editorMenu;
@@ -79,7 +80,7 @@ class Scene : public QGraphicsScene
         QVector<EditorBlock*> editorBlocks;
         QTimer animationTimer;
 
-        QString levelname;
+        QString levelName;
         int score;
         QTime time;
         int lifes;
