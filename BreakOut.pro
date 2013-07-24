@@ -1,6 +1,6 @@
 #-------------------------------------------------
 #
-# Project created by QtCreator 2013-07-05T15:50:21
+# Project created by QtCreator 2013-07-24T18:06:20
 #
 #-------------------------------------------------
 
@@ -9,29 +9,50 @@ QT       += core gui
 TARGET = BreakOut
 TEMPLATE = app
 
-SOURCES += main.cpp\
-        scene.cpp \
-    physicsobject.cpp \
-    sceneobject.cpp \
-    roundplatform.cpp \
+
+SOURCES += \
+    scene.cpp \
     mainwindow.cpp \
-    ball.cpp \
-    block.cpp \
-    platform.cpp \
-    editorblock.cpp
+    main.cpp \
+    Editor/editormenu.cpp \
+    Editor/editorblock.cpp \
+    Editor/editor.cpp \
+    Game/roundplatform.cpp \
+    Game/platform.cpp \
+    Game/physicsobject.cpp \
+    Game/gamestate.cpp \
+    Game/gameobject.cpp \
+    Game/gamemessage.cpp \
+    Game/gamemenu.cpp \
+    Game/gamefield.cpp \
+    Game/game.cpp \
+    Game/block.cpp \
+    Game/ball.cpp \
+    Menu/menusettings.cpp \
+    Menu/menumain.cpp \
+    Menu/menu.cpp
 
-HEADERS  += scene.h \
-    physicsobject.h \
-    sceneobject.h \
-    roundplatform.h \
+HEADERS  += \
+    scene.h \
     mainwindow.h \
-    ball.h \
-    block.h \
-    platform.h \
-    editorblock.h
+    Editor/editormenu.h \
+    Editor/editorblock.h \
+    Editor/editor.h \
+    Game/roundplatform.h \
+    Game/platform.h \
+    Game/physicsobject.h \
+    Game/gamestate.h \
+    Game/gameobject.h \
+    Game/gamemessage.h \
+    Game/gamemenu.h \
+    Game/gamefield.h \
+    Game/game.h \
+    Game/block.h \
+    Game/ball.h \
+    Menu/menusettings.h \
+    Menu/menumain.h \
+    Menu/menu.h
 
-OTHER_FILES +=
+FORMS    +=
 
 QMAKE_CXXFLAGS += -std=c++0x
-
-RESOURCES +=

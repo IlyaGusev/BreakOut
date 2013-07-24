@@ -1,13 +1,13 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'physicsobject.h'
 **
-** Created: Tue Jul 9 20:07:45 2013
+** Created: Tue Jul 23 13:03:54 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
 
-#include "../physicsobject.h"
+#include "../Game/physicsobject.h"
 #if !defined(Q_MOC_OUTPUT_REVISION)
 #error "The header file 'physicsobject.h' doesn't include <QObject>."
 #elif Q_MOC_OUTPUT_REVISION != 63
@@ -24,22 +24,17 @@ static const uint qt_meta_data_PhysicsObject[] = {
        0,       // classname
        0,    0, // classinfo
        0,    0, // methods
-       2,   14, // properties
+       0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
        0,       // signalCount
 
- // properties: name, type, flags
-      24,   14, 0x53095103,
-      35,   30, 0x01095003,
-
        0        // eod
 };
 
 static const char qt_meta_stringdata_PhysicsObject[] = {
-    "PhysicsObject\0QVector2D\0speed\0bool\0"
-    "isDestroyable\0"
+    "PhysicsObject\0"
 };
 
 void PhysicsObject::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -81,36 +76,6 @@ int PhysicsObject::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     _id = QObject::qt_metacall(_c, _id, _a);
     if (_id < 0)
         return _id;
-    
-#ifndef QT_NO_PROPERTIES
-     if (_c == QMetaObject::ReadProperty) {
-        void *_v = _a[0];
-        switch (_id) {
-        case 0: *reinterpret_cast< QVector2D*>(_v) = getSpeed(); break;
-        case 1: *reinterpret_cast< bool*>(_v) = isDestroyable(); break;
-        }
-        _id -= 2;
-    } else if (_c == QMetaObject::WriteProperty) {
-        void *_v = _a[0];
-        switch (_id) {
-        case 0: setSpeed(*reinterpret_cast< QVector2D*>(_v)); break;
-        case 1: setDestroyable(*reinterpret_cast< bool*>(_v)); break;
-        }
-        _id -= 2;
-    } else if (_c == QMetaObject::ResetProperty) {
-        _id -= 2;
-    } else if (_c == QMetaObject::QueryPropertyDesignable) {
-        _id -= 2;
-    } else if (_c == QMetaObject::QueryPropertyScriptable) {
-        _id -= 2;
-    } else if (_c == QMetaObject::QueryPropertyStored) {
-        _id -= 2;
-    } else if (_c == QMetaObject::QueryPropertyEditable) {
-        _id -= 2;
-    } else if (_c == QMetaObject::QueryPropertyUser) {
-        _id -= 2;
-    }
-#endif // QT_NO_PROPERTIES
     return _id;
 }
 QT_END_MOC_NAMESPACE
