@@ -3,8 +3,7 @@ Game::Game(QObject *parent) :
     Scene(1024, 768, parent),
     state(new GameState),
     field(new GameField(this)),
-    menu(new GameMenu),
-    message(nullptr)
+    menu(new GameMenu)
 {
     this->addWidget(state);
     state->show();
@@ -38,8 +37,6 @@ Game::~Game(){
         field->deleteLater();
     if (menu!=nullptr)
         menu->deleteLater();
-    if (message!=nullptr)
-        message->deleteLater();
 }
 
 void Game::keyPressEvent(QKeyEvent * pe){
@@ -74,11 +71,12 @@ void Game::keyPressEvent(QKeyEvent * pe){
         break;
         case Qt::Key_Escape:{
             if (!pe->isAutoRepeat()){
-                if (menu->isHidden()){
+                if (menu->isHidden() && field->anitimer.isActive()){
                     field->stop();
                     menu->show();
                 }
-                else{
+                else
+                if ((!menu->isHidden()) && (!field->anitimer.isActive())){
                     field->start();
                     menu->hide();
                 }
@@ -142,7 +140,7 @@ void Game::slotBallLost(){
     }
     else{
         field->stop();
-        QTimer::singleShot(1000, this, SIGNAL(signalGameOver()));
+        QTimer::singleShot(1000, this, SLOT(slotGameOver()));
     }
 }
 
@@ -170,4 +168,8 @@ void Game::slotLevelFinished(){
 void Game::slotResume(){
     field->start();
     menu->hide();
+}
+
+void Game::slotGameOver(){
+    emit signalMain();
 }

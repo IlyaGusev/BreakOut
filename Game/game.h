@@ -7,7 +7,6 @@
 #include "gamestate.h"
 #include "gamefield.h"
 #include "gamemenu.h"
-#include "gamemessage.h"
 
 class Game : public Scene
 {
@@ -24,6 +23,7 @@ private slots:
     void slotLevelFinished();
     void slotBallLost();
     void slotResume();
+    void slotGameOver();
 protected:
     void keyPressEvent(QKeyEvent * pe);
     void keyReleaseEvent(QKeyEvent * pe);
@@ -31,7 +31,6 @@ private:
     GameState*   state;
     GameField*   field;
     GameMenu*    menu;
-    GameMessage* message;
 };
 
 #endif // GAME_H

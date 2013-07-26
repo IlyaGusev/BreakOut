@@ -6,9 +6,9 @@ GameField::GameField(QGraphicsScene* sc, QObject *parent) :
     platform(nullptr),
     balls(),
     blocks(),
+    anitimer(this),
     scene(sc),
-    borders(),
-    anitimer(this)
+    borders()
 {
     connect(&anitimer, SIGNAL(timeout()), this, SLOT(nextTick()));
 }
@@ -175,41 +175,102 @@ void GameField::nextTick(){
     //Collides
     for (int i=0; i<balls.size(); i++){
         QPointF intersection(0,0);
-        if (balls[i]->collidesWithItem(platform, &intersection)){
-            calculateCollide(balls[i], platform, &intersection);
-        }
-        for (int j=1; j<borders.size(); j++){
-            if (balls[i]->collidesWithItem(borders[j], &intersection)){
-                calculateCollide(balls[i], borders[j], &intersection);
-            }
-        }
-        for (int j=0; j<balls.size(); j++){
-            if (i!=j)
-            if (balls[i]->collidesWithItem(balls[j], &intersection))
-                calculateCollide(balls[i], balls[j], &intersection);
-        }
-        for (int j=0; j<blocks.size(); j++){
-            if (balls[i]->collidesWithItem(blocks[j], &intersection)){
-                calculateCollide(balls[i], blocks[j], &intersection);
-                if (blocks[j]->properties->isDestroyable()){
-                    delete blocks[j];
-                    blocks.erase(blocks.begin()+j);
-                    emit signalBlockDestroyed();
-                    if (blocks.isEmpty()){
-                        stop();
-                        QTimer::singleShot(2000, this, SIGNAL(signalLevelFinished()));
+        foreach(QGraphicsItem* it, balls[i]->graphics->collidingItems())
+        {
+            bool calculated = false;
+            for (int j=0; j<balls.size(); j++){
+                if (i!=j){
+                    if (it==((QGraphicsItem*)balls[j]->graphics)){
+                        balls[i]->collidesWithItem(balls[j], &intersection);
+                        calculateCollide(balls[i], balls[j], &intersection);
+                        calculated = true;
+                        break;
                     }
                 }
             }
+            if (calculated==false)
+                for (int j=1; j<borders.size(); j++){
+                    if (it==((QGraphicsItem*)borders[j]->graphics)){
+                        balls[i]->collidesWithItem(borders[j], &intersection);
+                        calculateCollide(balls[i], borders[j], &intersection);
+                        calculated = true;
+                        break;
+                    }
+                }
+            if (calculated==false)
+                if (it==((QGraphicsItem*)platform->graphics)){
+                    balls[i]->collidesWithItem(platform, &intersection);
+                    calculateCollide(balls[i], platform, &intersection);
+                    calculated = true;
+                    continue;
+                }
+            if (calculated==false)
+                for (int j=0; j<blocks.size(); j++){
+                    if (it==((QGraphicsItem*)blocks[j]->graphics)){
+                        balls[i]->collidesWithItem(blocks[j], &intersection);
+                        calculateCollide(balls[i], blocks[j], &intersection);
+                        if (blocks[j]->properties->isDestroyable()){
+                            delete blocks[j];
+                            blocks.erase(blocks.begin()+j);
+                            emit signalBlockDestroyed();
+                            if (blocks.isEmpty()){
+                                stop();
+                                QTimer::singleShot(500, this, SIGNAL(signalLevelFinished()));
+                            }
+                        }
+                        calculated = true;
+                        break;
+                    }
+                }
         }
         if (balls[i]->graphics->collidesWithItem(borders[0]->graphics)){
-            delete balls[i];
-            balls.erase(balls.begin()+i);
-            if (balls.isEmpty())
-                emit signalBallLost();
-            continue;
+            balls[i]->collidesWithItem(borders[0], &intersection);
+            calculateCollide(balls[i], borders[0], &intersection);
+            qDebug()<<balls.size();
+//            delete balls[i];
+//            balls.erase(balls.begin()+i);
+//            qDebug()<<balls.size();
+//            if (balls.isEmpty())
+//                emit signalBallLost();
+//            continue;
         }
     }
+
+//        if (balls[i]->collidesWithItem(platform, &intersection)){
+//            calculateCollide(balls[i], platform, &intersection);
+//        }
+//        for (int j=1; j<borders.size(); j++){
+//            if (balls[i]->collidesWithItem(borders[j], &intersection)){
+//                calculateCollide(balls[i], borders[j], &intersection);
+//            }
+//        }
+//        for (int j=0; j<balls.size(); j++){
+//            if (i!=j)
+//            if (balls[i]->collidesWithItem(balls[j], &intersection))
+//                calculateCollide(balls[i], balls[j], &intersection);
+//        }
+//        for (int j=0; j<blocks.size(); j++){
+//            if (balls[i]->collidesWithItem(blocks[j], &intersection)){
+//                calculateCollide(balls[i], blocks[j], &intersection);
+//                if (blocks[j]->properties->isDestroyable()){
+//                    delete blocks[j];
+//                    blocks.erase(blocks.begin()+j);
+//                    emit signalBlockDestroyed();
+//                    if (blocks.isEmpty()){
+//                        stop();
+//                        QTimer::singleShot(500, this, SIGNAL(signalLevelFinished()));
+//                    }
+//                }
+//            }
+//        }
+//        if (balls[i]->graphics->collidesWithItem(borders[0]->graphics)){
+//            delete balls[i];
+//            balls.erase(balls.begin()+i);
+//            if (balls.isEmpty())
+//                emit signalBallLost();
+//            continue;
+//        }
+//    }
 }
 
 void GameField::calculateCollide(GameObject* main, GameObject* secondary, QPointF* intersection){

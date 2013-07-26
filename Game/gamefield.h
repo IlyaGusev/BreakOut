@@ -49,10 +49,10 @@ public:
     Platform* platform;
     QVector<Ball*> balls;
     QVector<Block*> blocks;
+    QTimer anitimer;
 private:
     QGraphicsScene* scene;
     QVector<Block*> borders;
-    QTimer anitimer;
 };
 
 #endif // GAMEFIELD_H

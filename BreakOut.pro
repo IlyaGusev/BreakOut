@@ -22,7 +22,6 @@ SOURCES += \
     Game/physicsobject.cpp \
     Game/gamestate.cpp \
     Game/gameobject.cpp \
-    Game/gamemessage.cpp \
     Game/gamemenu.cpp \
     Game/gamefield.cpp \
     Game/game.cpp \
@@ -43,7 +42,6 @@ HEADERS  += \
     Game/physicsobject.h \
     Game/gamestate.h \
     Game/gameobject.h \
-    Game/gamemessage.h \
     Game/gamemenu.h \
     Game/gamefield.h \
     Game/game.h \

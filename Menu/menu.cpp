@@ -5,6 +5,7 @@ Menu::Menu(QObject *parent) :
     main(new MenuMain),
     settings(new MenuSettings)
 {
+    setBackgroundBrush(QBrush(QImage("menuBackground.jpg")));
     addWidget(settings);
     settings->setGeometry(width()/2-100, height()/5+100, 200, 200);
 

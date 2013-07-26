@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'game.h'
 **
-** Created: Wed Jul 24 19:03:40 2013
+** Created: Thu Jul 25 14:15:58 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,7 +23,7 @@ static const uint qt_meta_data_Game[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       5,   14, // methods
+       6,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
@@ -38,6 +38,7 @@ static const uint qt_meta_data_Game[] = {
       40,    5,    5,    5, 0x08,
       60,    5,    5,    5, 0x08,
       75,    5,    5,    5, 0x08,
+      88,    5,    5,    5, 0x08,
 
        0        // eod
 };
@@ -45,7 +46,7 @@ static const uint qt_meta_data_Game[] = {
 static const char qt_meta_stringdata_Game[] = {
     "Game\0\0signalMain()\0slotBlockDestroyed()\0"
     "slotLevelFinished()\0slotBallLost()\0"
-    "slotResume()\0"
+    "slotResume()\0slotGameOver()\0"
 };
 
 void Game::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -59,6 +60,7 @@ void Game::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void *
         case 2: _t->slotLevelFinished(); break;
         case 3: _t->slotBallLost(); break;
         case 4: _t->slotResume(); break;
+        case 5: _t->slotGameOver(); break;
         default: ;
         }
     }
@@ -97,9 +99,9 @@ int Game::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 5)
+        if (_id < 6)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 5;
+        _id -= 6;
     }
     return _id;
 }
