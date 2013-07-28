@@ -3,6 +3,8 @@
 
 GameField::GameField(QGraphicsScene* sc, QObject *parent) :
     QObject(parent),
+    PLATFORM_SPEED(1.5),
+    BALL_SPEED(2.0),
     platform(nullptr),
     balls(),
     blocks(),
@@ -30,6 +32,10 @@ GameField::~GameField(){
         delete b->properties;
     }
     borders.clear();
+    foreach (Bonus* b, bonuses){
+        delete b->properties;
+    }
+    bonuses.clear();
 }
 
 void GameField::createPlatform(int width, int height){
@@ -67,20 +73,57 @@ void GameField::addBall(QRectF rect, QColor clr, QVector2D vect){
     balls.push_back(new Ball);
     ((QGraphicsEllipseItem*)(balls.back()->graphics))->setPen(QPen(Qt::black));
     ((QGraphicsEllipseItem*)(balls.back()->graphics))->setBrush(QBrush(clr));
+//    ((QGraphicsEllipseItem*)(balls.back()->graphics))->setBrush(QBrush(QImage(":/images/ball1.jpg")));
     ((QGraphicsEllipseItem*)(balls.back()->graphics))->setRect(0, 0, rect.width(), rect.height());
     ((QGraphicsEllipseItem*)(balls.back()->graphics))->setPos(rect.x(), rect.y());
     balls.back()->properties->setSpeed(vect);
     scene->addItem(balls.back()->graphics);
+    balls.back()->properties->setProperty("isFired", false);
 }
 
-void GameField::addBlock(QRectF rect, QColor clr){
+void GameField::addBlock(QRectF rect, QColor clr, BlockType type){
     blocks.push_back(new Block);
     ((QGraphicsRectItem*)blocks.back()->graphics)->setPen(QPen(Qt::black));
-    ((QGraphicsRectItem*)blocks.back()->graphics)->setBrush(QBrush(clr));
     ((QGraphicsRectItem*)blocks.back()->graphics)->setRect(0, 0, rect.width(), rect.height());
     ((QGraphicsRectItem*)blocks.back()->graphics)->setPos(rect.x(), rect.y());
-    blocks.back()->properties->setDestroyable(true);
+
+    if (type == STANDART){
+        blocks.back()->properties->setProperty("isDestroyable", true);
+        blocks.back()->properties->setProperty("isBonus", false);
+        ((QGraphicsRectItem*)blocks.back()->graphics)->setBrush(QBrush(clr));
+    }else
+    if (type == BONUS){
+        blocks.back()->properties->setProperty("isDestroyable", true);
+        blocks.back()->properties->setProperty("isBonus", true);
+        ((QGraphicsRectItem*)blocks.back()->graphics)->setBrush(QBrush(clr, Qt::Dense1Pattern));
+    }else
+    if (type == UNDESTR){
+        blocks.back()->properties->setProperty("isDestroyable", false);
+        blocks.back()->properties->setProperty("isBonus", false);
+        ((QGraphicsRectItem*)blocks.back()->graphics)->setBrush(QBrush(clr, Qt::Dense3Pattern));
+    }
     scene->addItem(blocks.back()->graphics);
+}
+
+void GameField::addBonus(QRectF rect, Bonus::BonusType type){
+    bonuses.push_back(new Bonus(type));
+    ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setPen(QPen(Qt::black));
+    ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setRect(0, 0, rect.width(), rect.height());
+    ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setPos(rect.x(), rect.y());
+    bonuses.back()->properties->setSpeed(QVector2D(0, 1.5));
+    if (type == Bonus::PLATFORM_EXTEND){
+        ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setBrush(QBrush(Qt::green));
+    }
+    if (type == Bonus::BALL_ACCELERATION){
+        ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setBrush(QBrush(Qt::red));
+    }
+    if (type == Bonus::PLATFORM_ACCELERATION){
+        ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setBrush(QBrush(Qt::blue));
+    }
+    if (type == Bonus::FIREBALL){
+        ((QGraphicsEllipseItem*)(bonuses.back()->graphics))->setBrush(QBrush(Qt::yellow));
+    }
+    scene->addItem(bonuses.back()->graphics);
 }
 
 void GameField::loadLevel(QString name){
@@ -101,15 +144,9 @@ void GameField::loadLevel(QString name){
                 double height = str.toDouble();
                 stream>>str;
                 int color = str.toInt();
-                addBlock(QRectF(x,y,width,height), QColor(Qt::GlobalColor(color)));;
-            }
-            if (str=="color"){
                 stream>>str;
-                int index = str.toInt();
-                stream>>str;
-                int color = str.toInt();
-                if (index<blocks.size())
-                    ((QGraphicsRectItem*)blocks[index]->graphics)->setBrush(QColor(Qt::GlobalColor(color)));
+                int type = str.toInt();
+                addBlock(QRectF(x,y,width,height), QColor(Qt::GlobalColor(color)), BlockType(type));;
             }
         }
         file.close();
@@ -133,11 +170,15 @@ void GameField::clear(){
         delete b;
     }
     borders.clear();
+    foreach (Bonus* b, bonuses){
+        delete b;
+    }
+    bonuses.clear();
 }
 
 
 void GameField::start(){
-    anitimer.start(ANITIMER_STEP);
+    anitimer.start(3);
 }
 
 void GameField::stop(){
@@ -146,6 +187,7 @@ void GameField::stop(){
 
 void GameField::nextTick(){
     //Moves
+
     if ((platform->properties->property("isMovingLeft")).toBool())
         if (platform->graphics->pos().x()>=BORDER_DEPTH)
             platform->graphics->setPos(platform->graphics->pos().x()+
@@ -154,7 +196,8 @@ void GameField::nextTick(){
                                        platform->properties->getSpeed().y());
     if ((platform->properties->property("isMovingRight")).toBool())
         if (platform->graphics->pos().x()<=1024-
-                                           PLATFORM_WIDTH-BORDER_DEPTH-
+                                           platform->graphics->boundingRect().width()-
+                                           BORDER_DEPTH-
                                            GAME_STATS_WIDTH)
             platform->graphics->setPos(platform->graphics->pos().x()+
                                        platform->properties->getSpeed().x(),
@@ -163,19 +206,27 @@ void GameField::nextTick(){
     for (int i=0; i<balls.size(); i++){
         if (balls[i]->properties->getSpeed()==QVector2D(0,0))
             balls[i]->graphics->setPos(platform->graphics->pos().x()+
-                                       PLATFORM_WIDTH/2-BALL_RADIUS/2,
-                                       platform->graphics->pos().y()
-                                       -BALL_RADIUS);
+                                       platform->graphics->boundingRect().width()/2-
+                                       BALL_RADIUS/2,
+                                       platform->graphics->pos().y()-
+                                       BALL_RADIUS);
         else
             balls[i]->graphics->setPos(balls[i]->graphics->pos().x()+
                                        balls[i]->properties->getSpeed().x(),
                                        balls[i]->graphics->pos().y()+
                                        balls[i]->properties->getSpeed().y());
     }
+    for (int i=0; i<bonuses.size(); i++){
+        bonuses[i]->graphics->setPos(bonuses[i]->graphics->pos().x()+
+                                   bonuses[i]->properties->getSpeed().x(),
+                                   bonuses[i]->graphics->pos().y()+
+                                   bonuses[i]->properties->getSpeed().y());
+    }
     //Collides
     for (int i=0; i<balls.size(); i++){
         QPointF intersection(0,0);
-        foreach(QGraphicsItem* it, balls[i]->graphics->collidingItems())
+        QList<QGraphicsItem*> list = balls[i]->graphics->collidingItems();
+        foreach(QGraphicsItem* it, list)
         {
             bool calculated = false;
             for (int j=0; j<balls.size(); j++){
@@ -204,16 +255,40 @@ void GameField::nextTick(){
                     calculated = true;
                     continue;
                 }
-            if (calculated==false)
+            if (calculated==false){
                 for (int j=0; j<blocks.size(); j++){
                     if (it==((QGraphicsItem*)blocks[j]->graphics)){
                         balls[i]->collidesWithItem(blocks[j], &intersection);
-                        calculateCollide(balls[i], blocks[j], &intersection);
-                        if (blocks[j]->properties->isDestroyable()){
+                        if (!blocks[j]->properties->property("isDestroyable").toBool())
+                            calculateCollide(balls[i], blocks[j], &intersection);
+                        else if (!balls[i]->properties->property("isFired").toBool())
+                            calculateCollide(balls[i], blocks[j], &intersection);
+                        if (blocks[j]->properties->property("isDestroyable").toBool()){
+                            if (blocks[j]->properties->property("isBonus").toBool()){
+                                int BONUS_WIDTH = 40;
+                                int BONUS_HEIGHT = 30;
+                                qsrand(QTime::currentTime().msec());
+                                int t = qrand()%4;
+                                addBonus(QRectF(blocks[j]->graphics->pos().x()+
+                                                blocks[j]->graphics->boundingRect().width()/2-BONUS_WIDTH/2,
+                                                blocks[j]->graphics->pos().y()+
+                                                blocks[j]->graphics->boundingRect().height()/2,
+                                                BONUS_WIDTH,
+                                                BONUS_HEIGHT),
+                                         Bonus::BonusType(t));
+                            }
                             delete blocks[j];
                             blocks.erase(blocks.begin()+j);
                             emit signalBlockDestroyed();
-                            if (blocks.isEmpty()){
+
+                            bool isFinished = true;
+                            for (int j=0; j<blocks.size(); j++){
+                                if (blocks[j]->properties->property("isBonus").toBool() || blocks[j]->properties->property("isDestroyable").toBool()){
+                                    isFinished = false;
+                                    break;
+                                }
+                            }
+                            if (isFinished){
                                 stop();
                                 QTimer::singleShot(500, this, SIGNAL(signalLevelFinished()));
                             }
@@ -222,55 +297,64 @@ void GameField::nextTick(){
                         break;
                     }
                 }
+
+            }
         }
         if (balls[i]->graphics->collidesWithItem(borders[0]->graphics)){
-            balls[i]->collidesWithItem(borders[0], &intersection);
-            calculateCollide(balls[i], borders[0], &intersection);
-            qDebug()<<balls.size();
-//            delete balls[i];
-//            balls.erase(balls.begin()+i);
-//            qDebug()<<balls.size();
-//            if (balls.isEmpty())
-//                emit signalBallLost();
-//            continue;
+            delete balls[i];
+            balls.erase(balls.begin()+i);
+            if (balls.isEmpty())
+                emit signalBallLost();
+            continue;
         }
     }
 
-//        if (balls[i]->collidesWithItem(platform, &intersection)){
-//            calculateCollide(balls[i], platform, &intersection);
-//        }
-//        for (int j=1; j<borders.size(); j++){
-//            if (balls[i]->collidesWithItem(borders[j], &intersection)){
-//                calculateCollide(balls[i], borders[j], &intersection);
-//            }
-//        }
-//        for (int j=0; j<balls.size(); j++){
-//            if (i!=j)
-//            if (balls[i]->collidesWithItem(balls[j], &intersection))
-//                calculateCollide(balls[i], balls[j], &intersection);
-//        }
-//        for (int j=0; j<blocks.size(); j++){
-//            if (balls[i]->collidesWithItem(blocks[j], &intersection)){
-//                calculateCollide(balls[i], blocks[j], &intersection);
-//                if (blocks[j]->properties->isDestroyable()){
-//                    delete blocks[j];
-//                    blocks.erase(blocks.begin()+j);
-//                    emit signalBlockDestroyed();
-//                    if (blocks.isEmpty()){
-//                        stop();
-//                        QTimer::singleShot(500, this, SIGNAL(signalLevelFinished()));
-//                    }
-//                }
-//            }
-//        }
-//        if (balls[i]->graphics->collidesWithItem(borders[0]->graphics)){
-//            delete balls[i];
-//            balls.erase(balls.begin()+i);
-//            if (balls.isEmpty())
-//                emit signalBallLost();
-//            continue;
-//        }
-//    }
+    for (int i=0; i<bonuses.size(); i++){
+        QList<QGraphicsItem*> list = bonuses[i]->graphics->collidingItems();
+        bool calculated = false;
+        foreach(QGraphicsItem* it, list)
+        {
+            if (it==((QGraphicsItem*)platform->graphics)){
+                if (bonuses[i]->type()==Bonus::PLATFORM_EXTEND){
+                    int current_width = ((RoundPlatform*)platform->graphics)->boundingRect().width();
+                    if (current_width<300){
+                        ((RoundPlatform*)platform->graphics)->setRect(QRectF(0,0, current_width+20, PLATFORM_HEIGHT));
+                        ((RoundPlatform*)platform->graphics)->setPos(platform->graphics->pos().x()-10, platform->graphics->pos().y());
+                    }
+                }
+                if (bonuses[i]->type()==Bonus::PLATFORM_ACCELERATION){
+                    if (PLATFORM_SPEED<3){
+                        PLATFORM_SPEED+=0.2;
+                    }
+                }
+                if (bonuses[i]->type()==Bonus::PLATFORM_ACCELERATION){
+                    if (PLATFORM_SPEED<3){
+                        PLATFORM_SPEED+=0.2;
+                    }
+                }
+                if (bonuses[i]->type()==Bonus::BALL_ACCELERATION){
+                    if (BALL_SPEED<4){
+                        BALL_SPEED+=0.2;
+                    }
+                }
+                if (bonuses[i]->type()==Bonus::FIREBALL){
+                    for (int i=0; i<balls.size(); i++){
+                        ((QGraphicsEllipseItem*)(balls[i]->graphics))->setBrush(QBrush(Qt::yellow));
+                        balls[i]->properties->setProperty("isFired", true);
+                    }
+                }
+                delete bonuses[i];
+                bonuses.erase(bonuses.begin()+i);
+                calculated = true;
+                break;
+            }
+        }
+        if (calculated) continue;
+        if (bonuses[i]->graphics->collidesWithItem(borders[0]->graphics)){
+            delete bonuses[i];
+            bonuses.erase(bonuses.begin()+i);
+        }
+    }
 }
 
 void GameField::calculateCollide(GameObject* main, GameObject* secondary, QPointF* intersection){
@@ -285,6 +369,8 @@ void GameField::calculateCollide(GameObject* main, GameObject* secondary, QPoint
     double speedY = main->properties->getSpeed().y();
     QVector2D normal(intersection->x()-centerX, intersection->y()-centerY);
     QVector2D tangent(normal.y(), -normal.x());
+    if (tangent.y()<0)
+        tangent = QVector2D(-tangent.x(), -tangent.y());
     double temp = tangent.y()/tangent.length();
 
     double alpha;
@@ -292,8 +378,13 @@ void GameField::calculateCollide(GameObject* main, GameObject* secondary, QPoint
     else if (temp>=-1.0000001 && temp<=-0.9999999)  alpha = -M_PI/2;
     else                                            alpha = asin(temp);
 
+    if (tangent.x()<0)
+        alpha=M_PI-alpha;
+
     QVector2D static_speed ((speedX*cos(2*alpha)+speedY*sin(2*alpha)),
                             (speedX*sin(2*alpha)-speedY*cos(2*alpha)));
+    static_speed.normalize();
+    static_speed*=BALL_SPEED;
     main->properties->setSpeed(static_speed);
 
     //Dynamic part

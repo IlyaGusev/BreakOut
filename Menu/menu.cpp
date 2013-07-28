@@ -5,12 +5,12 @@ Menu::Menu(QObject *parent) :
     main(new MenuMain),
     settings(new MenuSettings)
 {
-    setBackgroundBrush(QBrush(QImage("menuBackground.jpg")));
+    setBackgroundBrush(QBrush(QImage(":/images/menuBackground.jpg")));
     addWidget(settings);
-    settings->setGeometry(width()/2-100, height()/5+100, 200, 200);
+    settings->setGeometry(width()/2-80, height()/5+70, 200, 200);
 
     addWidget(main);
-    main->setGeometry(width()/2-100, height()/5+100, 200, 200);
+    main->setGeometry(width()/2-80, height()/5+70, 200, 200);
 
     slotMain();
 
@@ -20,6 +20,7 @@ Menu::Menu(QObject *parent) :
     connect(main, SIGNAL(signalSettings()), this, SLOT(slotSettings()));
 
     connect(settings, SIGNAL(signalMain()), this, SLOT(slotMain()));
+    connect(settings, SIGNAL(signalMusic()), this, SIGNAL(signalMusic()));
 }
 
 void Menu::slotSettings(){

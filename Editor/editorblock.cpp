@@ -1,25 +1,36 @@
 #include "editorblock.h"
 
-EditorBlock::EditorBlock(QGraphicsItem *gparent) :
-    QGraphicsObject(gparent), _color(2)
+EditorBlock::EditorBlock(BlockType __type, QGraphicsItem *gparent) :
+    QGraphicsObject(gparent), _color(2), _type(__type)
 {
     setToolTip(QString("%1").arg("Click LMB and drag to scene!\nClick RMB to change color!"));
     setCursor(Qt::OpenHandCursor);
     setPen(QPen(Qt::black));
-    setBrush(QColor(Qt::GlobalColor(_color)));
+    if (_type==STANDART)
+        setBrush(QColor(Qt::GlobalColor(_color)));
+    else if (_type==UNDESTR)
+        setBrush(QBrush(QColor(Qt::GlobalColor(_color)), Qt::Dense3Pattern));
+    else if (_type==BONUS)
+        setBrush(QBrush(QColor(Qt::GlobalColor(_color)), Qt::Dense1Pattern));
 }
 
 void EditorBlock::mousePressEvent(QGraphicsSceneMouseEvent *event){
     if (event->button()==Qt::RightButton){
-        if (_color<18)
-            setBrush(QColor(Qt::GlobalColor(++_color)));
+        if (_color<18){
+            if (_type==STANDART)
+                setBrush(QColor(Qt::GlobalColor(++_color)));
+            else if (_type==UNDESTR)
+                setBrush(QBrush(QColor(Qt::GlobalColor(++_color)), Qt::Dense3Pattern));
+            else if (_type==BONUS)
+                setBrush(QBrush(QColor(Qt::GlobalColor(++_color)), Qt::Dense1Pattern));
+        }
         else
             _color=2;
     }
     if (event->button()==Qt::LeftButton){
         if (!((pos().x()>LEFT_BORDER) && (pos().x()+rect().width()<RIGHT_BORDER) &&
               (pos().y()>UP_BORDER) && (pos().y()+rect().height()<DOWN_BORDER)))
-            emit signalCopy();
+            emit signalCopy(_type);
     }
     setCursor(Qt::ClosedHandCursor);
 }
@@ -38,7 +49,7 @@ void EditorBlock::mouseReleaseEvent(QGraphicsSceneMouseEvent *event){
           (pos().y()>UP_BORDER) && (pos().y()+rect().height()<DOWN_BORDER)) &&
         event->button()==Qt::LeftButton)
     {
-        emit signalRemove();
+        emit signalRemove(_type);
     }
 }
 
@@ -74,15 +85,29 @@ void EditorBlock::setBrush(QBrush brush){
     update();
 }
 
-QBrush EditorBlock::brush(){
+void EditorBlock::setType(BlockType __type){
+    _type = __type;
+    if (_type==STANDART)
+        setBrush(QColor(Qt::GlobalColor(_color)));
+    else if (_type==UNDESTR)
+        setBrush(QBrush(QColor(Qt::GlobalColor(_color)), Qt::Dense3Pattern));
+    else if (_type==BONUS)
+        setBrush(QBrush(QColor(Qt::GlobalColor(_color)), Qt::Dense1Pattern));
+    update();
+}
+
+QBrush EditorBlock::brush() const{
     return _brush;
 }
 
-QPen EditorBlock::pen(){
+QPen EditorBlock::pen() const{
     return _pen;
 }
 
-QRectF EditorBlock::rect(){
+QRectF EditorBlock::rect() const{
     return _rect;
 }
 
+EditorBlock::BlockType EditorBlock::blockType() const{
+    return _type;
+}

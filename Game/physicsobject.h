@@ -11,11 +11,8 @@ public:
     explicit PhysicsObject(QObject *parent = 0);
     void setSpeed(QVector2D);
     QVector2D getSpeed() const;
-    void setDestroyable(bool);
-    bool isDestroyable() const;
 private:
     QVector2D _speed;
-    bool _isDestroyable;
 };
 
 #endif // PHYSICSOBJECT_H

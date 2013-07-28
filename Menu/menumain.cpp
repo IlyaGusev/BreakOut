@@ -1,5 +1,4 @@
 #include "menumain.h"
-
 MenuMain::MenuMain(QWidget *parent) :
     QWidget(parent)
 {
@@ -20,10 +19,17 @@ MenuMain::MenuMain(QWidget *parent) :
     layout->addWidget(ex);
     setLayout(layout);
 
-    setStyleSheet(QString("background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(0, 0, 0, 255), stop:1 rgba(54, 54, 54, 255));")+
-                  QString("\nQPushButton {")+
-                  QString("color: rgb(0, 156, 0);")+
-                  QString("background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(43, 43, 43, 255), stop:1 rgba(101, 101, 101, 255));")+
-                  QString("border-color: rgb(50, 50, 50)}")
+    setStyleSheet("QWidget{background-color: rgba(0, 0, 0, 30%);}"
+                  "QPushButton {"
+                  "height : 30 px;"
+                  "color: rgb(0, 170, 255);\n"
+                  "border : 0 px;"
+                  "background-image: url(:/images/button.png);\n"
+                  "background-repeat: no-repeat;"
+                  "background-position: center center;"
+                  "background-color: rgba(0, 0, 0, 0%);"
+                  "font: 75 11pt \"Century Schoolbook L\";"
+                  "selection-color: rgb(26, 26, 26); "
+                  "selection-background-color: rgb(143, 237, 255)}"
                   );
 }

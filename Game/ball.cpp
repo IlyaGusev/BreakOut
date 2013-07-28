@@ -6,5 +6,5 @@ Ball::Ball(QGraphicsScene *scene,
     GameObject(scene, parent, gparent)
 {
     delete graphics;
-    graphics = new QGraphicsEllipseItem(0, scene);
+    graphics = new QGraphicsEllipseItem(gparent, scene);
 }

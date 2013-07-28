@@ -5,20 +5,23 @@ Game::Game(QObject *parent) :
     field(new GameField(this)),
     menu(new GameMenu)
 {
-    this->addWidget(state);
+    addWidget(state);
     state->show();
-
-    field->createPlatform(PLATFORM_WIDTH, PLATFORM_HEIGHT);
+    field->createPlatform(field->PLATFORM_WIDTH, field->PLATFORM_HEIGHT);
     field->createBorders();
-    field->addBall(QRectF(field->platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
-                   field->platform->graphics->pos().y()-BALL_RADIUS,
-                   BALL_RADIUS,
-                   BALL_RADIUS),
+    field->addBall(QRectF(field->platform->graphics->pos().x()+
+                          field->PLATFORM_WIDTH/2-
+                          field->BALL_RADIUS/2,
+                          field->platform->graphics->pos().y()-field->BALL_RADIUS,
+                          field->BALL_RADIUS,
+                          field->BALL_RADIUS),
             QColor(Qt::red),
             QVector2D(0, 0));
     field->createBorders();
     field->loadLevel("Levels/1.lvl");
     field->start();
+    field->BALL_SPEED = 2;
+    field->PLATFORM_SPEED = 1.5;
 
     this->addWidget(menu);
     menu->hide();
@@ -47,7 +50,7 @@ void Game::keyPressEvent(QKeyEvent * pe){
                 if ((field->platform->properties->property("isMovingRight")).toBool())
                     field->platform->properties->setSpeed(QVector2D(0, 0));
                 else
-                    field->platform->properties->setSpeed(QVector2D(-PLATFORM_SPEED, 0));
+                    field->platform->properties->setSpeed(QVector2D(-field->PLATFORM_SPEED, 0));
             }
         }
         break;
@@ -57,14 +60,14 @@ void Game::keyPressEvent(QKeyEvent * pe){
                 if ((field->platform->properties->property("isMovingLeft")).toBool())
                     field->platform->properties->setSpeed(QVector2D(0, 0));
                 else
-                    field-> platform->properties->setSpeed(QVector2D(PLATFORM_SPEED, 0));
+                    field-> platform->properties->setSpeed(QVector2D(field->PLATFORM_SPEED, 0));
              }
         }
         break;
         case Qt::Key_Space:{
             foreach(Ball* bl, field->balls){
                 if (bl->properties->getSpeed()==QVector2D(0,0)){
-                    bl->properties->setSpeed(QVector2D(0, -BALL_SPEED));
+                    bl->properties->setSpeed(QVector2D(0, -field->BALL_SPEED));
                 }
             }
         }
@@ -85,12 +88,15 @@ void Game::keyPressEvent(QKeyEvent * pe){
         break;
         case Qt::Key_B:{
             if (!pe->isAutoRepeat()){
-                field->addBall(QRectF(field->platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
-                               field->platform->graphics->pos().y()-BALL_RADIUS,
-                               BALL_RADIUS,
-                               BALL_RADIUS),
-                           QColor(Qt::red),
-                           QVector2D(0, -BALL_SPEED));
+                field->addBall(QRectF(field->platform->graphics->pos().x()+
+                                      field->platform->graphics->boundingRect().width()/2-
+                                      field->BALL_RADIUS/2,
+                                      field->platform->graphics->pos().y()-
+                                      field->BALL_RADIUS,
+                                      field->BALL_RADIUS,
+                                      field->BALL_RADIUS),
+                        QColor(Qt::red),
+                        QVector2D(0, -field->BALL_SPEED));
             }
         }
         break;
@@ -106,7 +112,7 @@ void Game::keyReleaseEvent(QKeyEvent * pe){
             if (!pe->isAutoRepeat()){
                 field->platform->properties->setProperty("isMovingLeft", false);
                 if ((field->platform->properties->property("isMovingRight")).toBool())
-                    field->platform->properties->setSpeed(QVector2D(PLATFORM_SPEED, 0));
+                    field->platform->properties->setSpeed(QVector2D(field->PLATFORM_SPEED, 0));
                 else
                     field->platform->properties->setSpeed(QVector2D(0, 0));
             }
@@ -116,7 +122,7 @@ void Game::keyReleaseEvent(QKeyEvent * pe){
             if (!pe->isAutoRepeat()){
                 field->platform->properties->setProperty("isMovingRight", false);
                 if ((field->platform->properties->property("isMovingLeft")).toBool())
-                    field->platform->properties->setSpeed(QVector2D(-PLATFORM_SPEED, 0));
+                    field->platform->properties->setSpeed(QVector2D(-field->PLATFORM_SPEED, 0));
                 else
                     field->platform->properties->setSpeed(QVector2D(0, 0));
             }
@@ -130,13 +136,20 @@ void Game::keyReleaseEvent(QKeyEvent * pe){
 
 void Game::slotBallLost(){
     if (state->getLifes()!=0){
+        ((RoundPlatform*)field->platform->graphics)->setRect(QRectF(0,0, field->PLATFORM_WIDTH, field->PLATFORM_HEIGHT));
         state->setLifes(state->getLifes()-1);
-        field->addBall(QRectF(field->platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
-                       field->platform->graphics->pos().y()-BALL_RADIUS,
-                       BALL_RADIUS,
-                       BALL_RADIUS),
+        field->addBall(QRectF(field->platform->graphics->pos().x()+
+                              field->platform->graphics->boundingRect().width()/2-
+                              field->BALL_RADIUS/2,
+                              field->platform->graphics->pos().y()-
+                              field->BALL_RADIUS,
+                              field->BALL_RADIUS,
+                              field->BALL_RADIUS),
                 QColor(Qt::red),
                 QVector2D(0, 0));
+
+        field->BALL_SPEED = 2;
+        field->PLATFORM_SPEED = 1.5;
     }
     else{
         field->stop();
@@ -150,19 +163,23 @@ void Game::slotBlockDestroyed(){
 
 void Game::slotLevelFinished(){
     state->setLevel(QString((((char)((state->getLevel().toInt())+1))+'0')));
-
     field->clear();
-    field->createPlatform(PLATFORM_WIDTH, PLATFORM_HEIGHT);
+    field->createPlatform(field->PLATFORM_WIDTH, field->PLATFORM_HEIGHT);
     field->createBorders();
-    field->addBall(QRectF(field->platform->graphics->pos().x()+PLATFORM_WIDTH/2-BALL_RADIUS/2,
-                   field->platform->graphics->pos().y()-BALL_RADIUS,
-                   BALL_RADIUS,
-                   BALL_RADIUS),
+    field->addBall(QRectF(field->platform->graphics->pos().x()+
+                          field->PLATFORM_WIDTH/2-
+                          field->BALL_RADIUS/2,
+                          field->platform->graphics->pos().y()-
+                          field->BALL_RADIUS,
+                          field->BALL_RADIUS,
+                          field->BALL_RADIUS),
             QColor(Qt::red),
             QVector2D(0, 0));
     field->createBorders();
     field->loadLevel("Levels/"+state->getLevel()+".lvl");
     field->start();
+    field->BALL_SPEED = 2;
+    field->PLATFORM_SPEED = 1.5;
 }
 
 void Game::slotResume(){

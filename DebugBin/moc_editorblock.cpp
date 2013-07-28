@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'editorblock.h'
 **
-** Created: Wed Jul 24 19:01:47 2013
+** Created: Sun Jul 28 14:31:58 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -32,13 +32,14 @@ static const uint qt_meta_data_EditorBlock[] = {
 
  // signals: signature, parameters, type, tag, flags
       13,   12,   12,   12, 0x05,
-      26,   12,   12,   12, 0x05,
+      48,   12,   12,   12, 0x05,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_EditorBlock[] = {
-    "EditorBlock\0\0signalCopy()\0signalRemove()\0"
+    "EditorBlock\0\0signalCopy(EditorBlock::BlockType)\0"
+    "signalRemove(EditorBlock::BlockType)\0"
 };
 
 void EditorBlock::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -47,12 +48,11 @@ void EditorBlock::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id,
         Q_ASSERT(staticMetaObject.cast(_o));
         EditorBlock *_t = static_cast<EditorBlock *>(_o);
         switch (_id) {
-        case 0: _t->signalCopy(); break;
-        case 1: _t->signalRemove(); break;
+        case 0: _t->signalCopy((*reinterpret_cast< EditorBlock::BlockType(*)>(_a[1]))); break;
+        case 1: _t->signalRemove((*reinterpret_cast< EditorBlock::BlockType(*)>(_a[1]))); break;
         default: ;
         }
     }
-    Q_UNUSED(_a);
 }
 
 const QMetaObjectExtraData EditorBlock::staticMetaObjectExtraData = {
@@ -95,14 +95,16 @@ int EditorBlock::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
 }
 
 // SIGNAL 0
-void EditorBlock::signalCopy()
+void EditorBlock::signalCopy(EditorBlock::BlockType _t1)
 {
-    QMetaObject::activate(this, &staticMetaObject, 0, 0);
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 0, _a);
 }
 
 // SIGNAL 1
-void EditorBlock::signalRemove()
+void EditorBlock::signalRemove(EditorBlock::BlockType _t1)
 {
-    QMetaObject::activate(this, &staticMetaObject, 1, 0);
+    void *_a[] = { 0, const_cast<void*>(reinterpret_cast<const void*>(&_t1)) };
+    QMetaObject::activate(this, &staticMetaObject, 1, _a);
 }
 QT_END_MOC_NAMESPACE

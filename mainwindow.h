@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QMainWindow>
+#include <phonon>
 #include "Game/game.h"
 #include "Menu/menu.h"
 #include "Editor/editor.h"
@@ -19,7 +20,10 @@ public slots:
     void openGame();
     void openEditor();
     void openMain();
+    void slotRepeat();
+    void slotMusic();
 private:
+    Phonon::MediaObject *music;
     Scene* scene;
     QGraphicsView* view;
     void setupView();

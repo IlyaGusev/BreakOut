@@ -7,6 +7,7 @@ class EditorBlock;
 #include <QVector>
 #include <QFile>
 #include <QTextStream>
+#include <QDebug>
 
 #include "scene.h"
 #include "editorblock.h"
@@ -19,15 +20,20 @@ public:
     explicit Editor(QObject *parent = 0);
     ~Editor();
     void createBorders();
+    void clearLevel();
+    void createExamples();
 signals:
     void signalMain();
 public slots:
-    void slotCopy();
-    void slotRemove();
+    void slotCopy(EditorBlock::BlockType);
+    void slotRemove(EditorBlock::BlockType);
     void slotSave(QString);
+    void slotLoad(QString);
 private:
     EditorMenu* menu;
-    QVector<EditorBlock*> blocks;
+    QVector<EditorBlock*> standartBlocks;
+    QVector<EditorBlock*> undestrBlocks;
+    QVector<EditorBlock*> bonusBlocks;
 };
 
 #endif // EDITOR_H

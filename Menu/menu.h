@@ -14,6 +14,7 @@ signals:
     void signalExit();
     void signalGame();
     void signalEditor();
+    void signalMusic();
 public slots:
     void slotMain();
     void slotSettings();

@@ -12,6 +12,7 @@ public:
     explicit MenuSettings(QWidget *parent = 0);
 signals:
     void signalMain();
+    void signalMusic();
 public slots:
     
 };

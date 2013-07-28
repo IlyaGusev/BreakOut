@@ -1,6 +1,6 @@
 #include "roundplatform.h"
 
-RoundPlatform::RoundPlatform() : QGraphicsItem(),
+RoundPlatform::RoundPlatform(QGraphicsItem* parent) : QGraphicsItem(parent),
     _rect(0, 0, 0, 0), _pen(Qt::black), _brush(Qt::black){}
 
 void RoundPlatform::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget){

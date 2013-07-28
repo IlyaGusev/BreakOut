@@ -8,7 +8,7 @@
 class RoundPlatform : public QGraphicsItem
 {
 public:
-    RoundPlatform();
+    RoundPlatform(QGraphicsItem * parent = 0);
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
     QRectF boundingRect() const;
     void setRect(QRectF cp);

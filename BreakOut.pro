@@ -5,6 +5,7 @@
 #-------------------------------------------------
 
 QT       += core gui
+QT       += phonon
 
 TARGET = BreakOut
 TEMPLATE = app
@@ -29,7 +30,8 @@ SOURCES += \
     Game/ball.cpp \
     Menu/menusettings.cpp \
     Menu/menumain.cpp \
-    Menu/menu.cpp
+    Menu/menu.cpp \
+    Game/bonus.cpp
 
 HEADERS  += \
     scene.h \
@@ -49,8 +51,12 @@ HEADERS  += \
     Game/ball.h \
     Menu/menusettings.h \
     Menu/menumain.h \
-    Menu/menu.h
+    Menu/menu.h \
+    Game/bonus.h
 
 FORMS    +=
 
 QMAKE_CXXFLAGS += -std=c++0x
+
+RESOURCES += \
+    res.qrc

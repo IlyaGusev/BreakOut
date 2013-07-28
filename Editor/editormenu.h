@@ -13,9 +13,11 @@ public:
     explicit EditorMenu(QWidget *parent = 0);
 signals:
     void signalSave(QString);
+    void signalLoad(QString);
     void signalMain();
 public slots:
     void slotEmitSave();
+    void slotEmitLoad();
 private:
     QLineEdit* le;
 };

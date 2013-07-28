@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Meta object code from reading C++ file 'menu.h'
 **
-** Created: Wed Jul 24 19:03:42 2013
+** Created: Sun Jul 28 14:38:47 2013
 **      by: The Qt Meta Object Compiler version 63 (Qt 4.8.1)
 **
 ** WARNING! All changes made in this file will be lost!
@@ -23,28 +23,30 @@ static const uint qt_meta_data_Menu[] = {
        6,       // revision
        0,       // classname
        0,    0, // classinfo
-       5,   14, // methods
+       6,   14, // methods
        0,    0, // properties
        0,    0, // enums/sets
        0,    0, // constructors
        0,       // flags
-       3,       // signalCount
+       4,       // signalCount
 
  // signals: signature, parameters, type, tag, flags
        6,    5,    5,    5, 0x05,
       19,    5,    5,    5, 0x05,
       32,    5,    5,    5, 0x05,
+      47,    5,    5,    5, 0x05,
 
  // slots: signature, parameters, type, tag, flags
-      47,    5,    5,    5, 0x0a,
-      58,    5,    5,    5, 0x0a,
+      61,    5,    5,    5, 0x0a,
+      72,    5,    5,    5, 0x0a,
 
        0        // eod
 };
 
 static const char qt_meta_stringdata_Menu[] = {
     "Menu\0\0signalExit()\0signalGame()\0"
-    "signalEditor()\0slotMain()\0slotSettings()\0"
+    "signalEditor()\0signalMusic()\0slotMain()\0"
+    "slotSettings()\0"
 };
 
 void Menu::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void **_a)
@@ -56,8 +58,9 @@ void Menu::qt_static_metacall(QObject *_o, QMetaObject::Call _c, int _id, void *
         case 0: _t->signalExit(); break;
         case 1: _t->signalGame(); break;
         case 2: _t->signalEditor(); break;
-        case 3: _t->slotMain(); break;
-        case 4: _t->slotSettings(); break;
+        case 3: _t->signalMusic(); break;
+        case 4: _t->slotMain(); break;
+        case 5: _t->slotSettings(); break;
         default: ;
         }
     }
@@ -96,9 +99,9 @@ int Menu::qt_metacall(QMetaObject::Call _c, int _id, void **_a)
     if (_id < 0)
         return _id;
     if (_c == QMetaObject::InvokeMetaMethod) {
-        if (_id < 5)
+        if (_id < 6)
             qt_static_metacall(this, _c, _id, _a);
-        _id -= 5;
+        _id -= 6;
     }
     return _id;
 }
@@ -119,5 +122,11 @@ void Menu::signalGame()
 void Menu::signalEditor()
 {
     QMetaObject::activate(this, &staticMetaObject, 2, 0);
+}
+
+// SIGNAL 3
+void Menu::signalMusic()
+{
+    QMetaObject::activate(this, &staticMetaObject, 3, 0);
 }
 QT_END_MOC_NAMESPACE
